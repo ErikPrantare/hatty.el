@@ -1,4 +1,48 @@
-* Query positions through hats
-For documentation, see commentary in [[file:hatty.el][hatty.el]].
+* hatty.el
+A package for rendering hats over characters in emacs, allowing words
+to be indexed quickly from any point in the buffer.
 
+** Setup
+Clone this repo and add the following to your configuration:
+
+#+begin_src elisp
+  (add-to-list 'load-path "path/to/hatty/directory")
+  (require 'hatty)
+  (hatty-mode 1)
+#+end_src
+
+This starts rendering hats in buffers visit.  To get the position of a
+hat, use ~hatty-locate~.  For example,
+
+#+begin_src elisp
+  (hatty-locate ?n 'yellow 'bolt)
+#+end_src
+
+will return the position of the yellow bolt over character "n".
+
+To change the hat colors, set ~hatty-colors~.  This should be an
+association mapping an identifier symbol to a string, representing a
+color valid in the SVG format.  This includes colour names like "red",
+"green", "magenta", as well as hex codes like "#aa7023".
+~hatty-colors~ may contain or exclude arbitrary colours, allowing you
+to remove, add or change the colors to your choosing.
+
+If you use a modus theme, the following will give the hats colors
+matching your theme:
+
+#+begin_src elisp
+  (setopt hatty-colors
+          `((white . ,(modus-themes-color 'fg-dim))
+            (yellow . ,(modus-themes-color 'yellow))
+            (red . ,(modus-themes-color 'red-intense))
+            (blue .  ,(modus-themes-color 'blue-intense))
+            (pink . ,(modus-themes-color 'magenta-alt))
+            (green . ,(modus-themes-color 'green))))
+#+end_src
+
+** Version system
+This project uses [[https://semver.org/][semantic versioning]].  While still on 0.y.z, an
+increment of y signals breaking changes.
+
+** Other
 Thanks to the [[https://github.com/cursorless-dev/cursorless/][cursorless]] project for inspiration and hat designs.

@@ -4,7 +4,7 @@
 
 ;; Author: Erik Präntare
 ;; Keywords: convenience
-;; Version: 0.0.2
+;; Version: 0.1.0
 
 ;; hatty.el is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU Affero General Public License
@@ -28,28 +28,28 @@
 
 ;; Setup: Call ‘hatty-mode’ to start displaying hats.  The
 ;; position of a hat may then be queried using the function
-;; ‘hatty-locate-hat’.
+;; ‘hatty-locate’.
 
 ;;; Code:
 
 (require 'subr-x)
 (require 'svg)
 
-(defvar hatty-hat-colors
-  `((white . "white")
-    (yellow. "yellow")
+(defvar hatty-colors
+  '((white . "white")
+    (yellow . "yellow")
     (red . "red")
     (blue . "blue")
     (pink . "pink")
     (green . "green"))
   "Alist of colors used in rendering hats, indexed by identifier.
 
-Identifiers are assumed to be symbols.
+Identifiers must to be symbols.
 
-The first element is assumed to be the default")
+The first element will become the default color.")
 
 ;; TODO Use proper svgs here.  Also add the other hats.
-(defvar hatty-hat-shapes
+(defvar hatty-shapes
   '((oval  . "M6 9C9.31371 9 12 6.98528 12 4.5C12 2.01472 9.31371 0 6 0C2.68629 0 0 2.01472 0 4.5C0 6.98528 2.68629 9 6 9Z")
     (bolt  . "M12 4V0C12 0 9 5 8 5C7 5 3 0 3 0L0 5V9C0 9 3 5 4 5C5 5 9 9 9 9L12 4Z")
     (curve  . "M6.00016 3.5C10 3.5 12 7.07378 12 9C12 4 10.5 0 6.00016 0C1.50032 0 0 4 0 9C0 7.07378 2.00032 3.5 6.00016 3.5Z")
@@ -57,20 +57,21 @@ The first element is assumed to be the default")
     (frame . "M0 0.000115976V8.99988H12V0L0 0.000115976ZM9.5 6.5H6H2.5V4.5V2.5H6H9.5V4.5V6.5Z"))
   "Alist of shapes used in rendering hats, indexed by identifier.
 
-Identifiers are assumed to be symbols.  The shapes must specify
-svg paths.
+Identifiers must be symbols.  The shapes must specify valid svg
+paths.
 
-The first element is assumed to be the default.")
+The first element will become the default shape.")
 
-(defvar hatty--hat-styles
+(defvar hatty--hat-styles nil
   "List of hat styles to choose from.
 
 This is recalculated at the beginning of
 ‘hatty-reallocate-hats’ to create all combinations from
-‘hatty-hat-colors’ and ‘hatty-hat-shapes’")
+‘hatty-colors’ and ‘hatty-shapes’")
 
 ;; TODO define the structure with EIEIO instead?  For constructors.
 (cl-defstruct hatty--hat
+  "A hat with COLOR and SHAPE at MARKER over CHARACTER."
   marker
   character
   color
@@ -86,17 +87,16 @@ This is recalculated at the beginning of
 This function is equivalent to ‘downcase’."
   (downcase character))
 
-(cl-defun hatty-locate-hat (&key character color shape)
+(cl-defun hatty-locate (character &optional color shape)
   "Get the position of hat over CHARACTER matching COLOR and SHAPE.
 
-COLOR and SHAPE should be values occurring as indices in
-‘cursorless-hat-colors’ and ‘curseorless-hat-shapes’
-respectively.
+COLOR and SHAPE should be identifiers as they occur in
+‘hatty-colors’ and ‘hatty-shapes’.
 
-If COLOR or SHAPE is left unspecified, the default color or
+If COLOR or SHAPE is nil or unspecified, the default color or
 shape will be used."
-  (setq color (or color (caar hatty-hat-colors)))
-  (setq shape (or shape (caar hatty-hat-shapes)))
+  (setq color (or color (caar hatty-colors)))
+  (setq shape (or shape (caar hatty-shapes)))
   (marker-position
    (hatty--hat-marker
     (seq-find (lambda (hat) (and (eq color (hatty--hat-color hat))
@@ -277,8 +277,8 @@ Tokens are queried from `hatty--get-tokens'"
                                  (/ svg-width 2)
                                  0.6
                                  (- 6))
-              :fill (alist-get (hatty--hat-color hat) hatty-hat-colors)
-              :d (alist-get (hatty--hat-shape hat) hatty-hat-shapes))
+              :fill (alist-get (hatty--hat-color hat) hatty-colors)
+              :d (alist-get (hatty--hat-shape hat) hatty-shapes))
 
     (with-silent-modifications
       (overlay-put overlay
@@ -324,10 +324,10 @@ FRAME.  Otherwise, create space for buffer in current window."
     (progn
       (setq hatty--hat-styles
             (cl-loop
-             for shape in hatty-hat-shapes
+             for shape in (seq-uniq (mapcar #'car hatty-shapes))
              append (cl-loop
-                     for color in hatty-hat-colors
-                     collect (cons (car color) (car shape)))))
+                     for color in (seq-uniq (mapcar #'car hatty-colors))
+                     collect (cons color shape))))
       (hatty-clear)
       (hatty--increase-line-height)
       (hatty--render-hats (hatty--create-hats)))))

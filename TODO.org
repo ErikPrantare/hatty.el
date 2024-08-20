@@ -8,6 +8,8 @@ Possible to generate from other documentation?
 ** TODO Hat data stored buffer locally.
 
 ** TODO Ignore hidden text in org links
+I should use invisible-p to check for visibility, both during
+tokenization and rendering.
 
 ** TODO Figure out how to handle space above continuation lines
 Many issues would evaporate if we instead patched the font to simply
