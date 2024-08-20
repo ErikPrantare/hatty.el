@@ -1,0 +1,4 @@
+* Query positions through hats
+For documentation, see commentary in [[file:hatty.el][hatty.el]].
+
+Thanks to the [[https://github.com/cursorless-dev/cursorless/][cursorless]] project for inspiration and hat designs.
