@@ -11,8 +11,8 @@ Clone this repo and add the following to your configuration:
   (hatty-mode 1)
 #+end_src
 
-This starts rendering hats in buffers visit.  To get the position of a
-hat, use ~hatty-locate~.  For example,
+This starts rendering hats in visited buffers.  To get the position of
+a hat, use ~hatty-locate~.  For example,
 
 #+begin_src elisp
   (hatty-locate ?n 'yellow 'bolt)
@@ -21,11 +21,11 @@ hat, use ~hatty-locate~.  For example,
 will return the position of the yellow bolt over character "n".
 
 To change the hat colors, set ~hatty-colors~.  This should be an
-association mapping an identifier symbol to a string, representing a
-color valid in the SVG format.  This includes colour names like "red",
-"green", "magenta", as well as hex codes like "#aa7023".
-~hatty-colors~ may contain or exclude arbitrary colours, allowing you
-to remove, add or change the colors to your choosing.
+association list mapping an identifier symbol to a string,
+representing a color valid in the SVG format.  This includes colour
+names like "red", "green", "magenta", as well as hex codes like
+"#aa7023".  ~hatty-colors~ may contain or exclude arbitrary colours,
+allowing you to remove, add or change the colors to your liking.
 
 If you use a modus theme, the following will give the hats colors
 matching your theme:
