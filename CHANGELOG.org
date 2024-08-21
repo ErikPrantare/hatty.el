@@ -1,0 +1,6 @@
+* NEXT
+- Make color specification the same as in emacs, rather than SVG.
+- Define user-facing variables with defcustom.
+
+* 0.1.0
+Initial release.

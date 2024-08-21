@@ -35,7 +35,7 @@
 (require 'subr-x)
 (require 'svg)
 
-(defvar hatty-colors
+(defcustom hatty-colors
   '((white . "white")
     (yellow . "yellow")
     (red . "red")
@@ -46,10 +46,12 @@
 
 Identifiers must to be symbols.
 
-The first element will become the default color.")
+The first element will become the default color."
+  :type '(alist :key-type symbol :value-type color)
+  :group 'hatty)
 
 ;; TODO Use proper svgs here.  Also add the other hats.
-(defvar hatty-shapes
+(defcustom hatty-shapes
   '((oval  . "M6 9C9.31371 9 12 6.98528 12 4.5C12 2.01472 9.31371 0 6 0C2.68629 0 0 2.01472 0 4.5C0 6.98528 2.68629 9 6 9Z")
     (bolt  . "M12 4V0C12 0 9 5 8 5C7 5 3 0 3 0L0 5V9C0 9 3 5 4 5C5 5 9 9 9 9L12 4Z")
     (curve  . "M6.00016 3.5C10 3.5 12 7.07378 12 9C12 4 10.5 0 6.00016 0C1.50032 0 0 4 0 9C0 7.07378 2.00032 3.5 6.00016 3.5Z")
@@ -60,7 +62,9 @@ The first element will become the default color.")
 Identifiers must be symbols.  The shapes must specify valid svg
 paths.
 
-The first element will become the default shape.")
+The first element will become the default shape."
+  :type '(alist :key-type symbol :value-type string)
+  :group 'hatty)
 
 (defvar hatty--hat-styles nil
   "List of hat styles to choose from.
@@ -261,6 +265,16 @@ Tokens are queried from `hatty--get-tokens'"
          (svg-width char-width)
          (svg (svg-create svg-width svg-height))
 
+         ;; Convert from emacs color to 6 letter svg hexcode.
+         (svg-hat-color
+          (let ((color
+                 (color-values
+                  (alist-get (hatty--hat-color hat) hatty-colors))))
+            (format "#%02X%02X%02X"
+                    (/ (nth 0 color) 256)
+                    (/ (nth 1 color) 256)
+                    (/ (nth 2 color) 256))))
+
          (overlay (make-overlay position (1+ position) nil t nil)))
 
     (svg-text svg text
@@ -277,7 +291,7 @@ Tokens are queried from `hatty--get-tokens'"
                                  (/ svg-width 2)
                                  0.6
                                  (- 6))
-              :fill (alist-get (hatty--hat-color hat) hatty-colors)
+              :fill svg-hat-color
               :d (alist-get (hatty--hat-shape hat) hatty-shapes))
 
     (with-silent-modifications
@@ -363,6 +377,7 @@ cancel any previously unperformed reallocations."
   :global t
   :init-value nil
   :lighter nil
+  :group 'hatty
   :after-hook
   (if hatty-mode
       (progn
