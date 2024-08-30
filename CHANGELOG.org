@@ -1,0 +1,9 @@
+* 0.2.0 [2024-08-31 Sat]
+- Color specification is now made according to emacs rules, not SVG.
+- Customization variables may now be customized using ~customize~.
+- ~hatty-mode~ is now buffer-local.  Use ~global-hatty-mode~ to enable
+  it globally.
+- Add autoload cookies for ~hatty-mode~ and ~global-hatty-mode~.
+
+* 0.1.0 [2024-08-21 Wed]
+Initial release.
