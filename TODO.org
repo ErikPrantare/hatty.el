@@ -3,6 +3,14 @@
 *** TODO Readme
 Possible to generate from other documentation?
 
+** Testing
+*** TODO Streamline test execution
+
+*** TODO Read how to properly organize tests
+[[info:ert#Top][ert#Top]]
+
+*** TODO Document running the tests
+
 ** TODO Investigate what is necessary for inclusion in MELPA
 
 ** TODO Hat data stored buffer locally.
@@ -46,11 +54,6 @@ Alternatively, provide a function for it.
 ** TODO cut down on global/buffer-local variables.
 
 ** TODO Sections more than commentary and code?
-
-** TODO Read how to properly organize tests
-[[info:ert#Top][ert#Top]]
-
-** TODO Document running the tests
 
 ** TODO Document that emacs needs to be compiled with rsvg for this to be efficient
 

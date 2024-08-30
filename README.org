@@ -8,7 +8,7 @@ Clone this repo and add the following to your configuration:
 #+begin_src elisp
   (add-to-list 'load-path "path/to/hatty/directory")
   (require 'hatty)
-  (hatty-mode 1)
+  (global-hatty-mode 1)
 #+end_src
 
 This starts rendering hats in visited buffers.  To get the position of
