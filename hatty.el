@@ -5,6 +5,9 @@
 ;; Author: Erik Präntare
 ;; Keywords: convenience
 ;; Version: 0.1.0
+;; Homepage: https://github.com/ErikPrantare/hatty.el
+;; Package-Requires: ((emacs "29.1"))
+;; Created: 05 Jul 2024
 
 ;; hatty.el is free software; you can redistribute it and/or
 ;; modify it under the terms of the GNU Affero General Public License
@@ -50,7 +53,7 @@ The first element will become the default color."
   :type '(alist :key-type symbol :value-type color)
   :group 'hatty)
 
-;; TODO Use proper svgs here.  Also add the other hats.
+;; TODO: Use proper svgs here.  Also add the other hats.
 (defcustom hatty-shapes
   '((oval  . "M6 9C9.31371 9 12 6.98528 12 4.5C12 2.01472 9.31371 0 6 0C2.68629 0 0 2.01472 0 4.5C0 6.98528 2.68629 9 6 9Z")
     (bolt  . "M12 4V0C12 0 9 5 8 5C7 5 3 0 3 0L0 5V9C0 9 3 5 4 5C5 5 9 9 9 9L12 4Z")
@@ -73,7 +76,7 @@ This is recalculated at the beginning of
 ‘hatty-reallocate-hats’ to create all combinations from
 ‘hatty-colors’ and ‘hatty-shapes’")
 
-;; TODO define the structure with EIEIO instead?  For constructors.
+;; TODO: Define the structure with EIEIO instead?  For constructors.
 (cl-defstruct hatty--hat
   "A hat with COLOR and SHAPE at MARKER over CHARACTER."
   marker
@@ -325,6 +328,9 @@ Tokens are queried from `hatty--get-tokens'"
                        (or (eq (car display-property) 'image)
                            (assq 'image display-property))))
         (hatty--draw-svg-hat hat)))))
+
+;; Declare now, will be set later along the minor mode.
+(defvar hatty-mode)
 
 (defun hatty-reallocate-hats ()
   "Reallocate hats."
