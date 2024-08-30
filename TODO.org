@@ -1,8 +1,4 @@
 * Unsorted
-** TODO Upload to a forge
-*** TODO Readme
-Possible to generate from other documentation?
-
 ** Testing
 *** TODO Streamline test execution
 
@@ -13,21 +9,14 @@ Possible to generate from other documentation?
 
 ** TODO Investigate what is necessary for inclusion in MELPA
 
-** TODO Hat data stored buffer locally.
-
-** TODO Ignore hidden text in org links
-I should use invisible-p to check for visibility, both during
-tokenization and rendering.
+** TODO Handle org links
+Currently, the visible portion does not get hatted.  Investigate why
+this is (bounds-of-thing-at-point for symbol).
 
 ** TODO Figure out how to handle space above continuation lines
-Many issues would evaporate if we instead patched the font to simply
-add additional space over the glyphs.
-
-** TODO Do not render hats when display property is a string
+I could simply avoid adding extra space in the svg for these cases.
 
 ** TODO Shortdoc
-
-** TODO defcustom
 
 ** TODO handle large raise display properties
 
@@ -40,8 +29,6 @@ add additional space over the glyphs.
 ** TODO Fix some issues in ascent
 Should be visible in the TODO face of this header.
 
-** TODO defgroup
-
 ** TODO automatic modus compatibility?
 Alternatively, provide a function for it.
 
@@ -53,15 +40,7 @@ Alternatively, provide a function for it.
 
 ** TODO cut down on global/buffer-local variables.
 
-** TODO Sections more than commentary and code?
-
 ** TODO Document that emacs needs to be compiled with rsvg for this to be efficient
-
-** TODO Tests for subscripts in LaTeX-mode
-
-
-* For 0.1.0:
-- Introduce changelog
 
 * Investigate
 - Cask.  However, cask does not seem to be packaged for guix.

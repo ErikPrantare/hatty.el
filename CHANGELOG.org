@@ -1,6 +1,8 @@
 * NEXT
 - Make color specification the same as in emacs, rather than SVG.
 - Define user-facing variables with defcustom.
+- ~hatty-mode~ is now buffer-local.  Use ~global-hatty-mode~ to enable
+  it globally.
 
 * 0.1.0
 Initial release.
