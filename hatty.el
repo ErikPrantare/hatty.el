@@ -330,17 +330,16 @@ Tokens are queried from `hatty--get-tokens'"
   "Reallocate hats."
   (interactive)
   (with-current-buffer (window-buffer)
-    (if hatty-mode
-        (progn
-          (setq hatty--hat-styles
-                (cl-loop
-                 for shape in (seq-uniq (mapcar #'car hatty-shapes))
-                 append (cl-loop
-                         for color in (seq-uniq (mapcar #'car hatty-colors))
-                         collect (cons color shape))))
-          (hatty--clear)
-          (hatty--increase-line-height)
-          (hatty--render-hats (hatty--create-hats))))))
+    (when hatty-mode
+      (setq hatty--hat-styles
+            (cl-loop
+             for shape in (seq-uniq (mapcar #'car hatty-shapes))
+             append (cl-loop
+                     for color in (seq-uniq (mapcar #'car hatty-colors))
+                     collect (cons color shape))))
+      (hatty--clear)
+      (hatty--increase-line-height)
+      (hatty--render-hats (hatty--create-hats)))))
 
 (defun hatty--clear ()
   "Clean up all resources of hatty.
@@ -368,6 +367,7 @@ cancel any previously unperformed reallocations."
   (setq hatty--hat-reallocate-timer
         (run-with-timer 0.1 nil #'hatty-reallocate-hats)))
 
+;;;###autoload
 (define-minor-mode hatty-mode
   "Minor mode for querying buffer positions through hats."
   :init-value nil
@@ -378,6 +378,7 @@ cancel any previously unperformed reallocations."
       (hatty--increase-line-height)
     (hatty--clear)))
 
+;;;###autoload
 (define-globalized-minor-mode global-hatty-mode hatty-mode hatty-mode
   :group 'hatty)
 
