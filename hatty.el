@@ -38,6 +38,12 @@
 (require 'subr-x)
 (require 'svg)
 
+(defgroup hatty nil
+  "Index buffer locations through character hats."
+  :group 'convenience
+  :prefix "hatty-"
+  :link '(emacs-commentary-link :tag "Commentary" "hatty.el"))
+
 (defcustom hatty-colors
   '((white . "white")
     (yellow . "yellow")
