@@ -41,9 +41,17 @@ matching your theme:
             (green . ,(modus-themes-color 'green))))
 #+end_src
 
-** Version system
+** Versioning system
 This project uses [[https://semver.org/][semantic versioning]].  While still on 0.y.z, an
 increment of y signals breaking changes.
+
+** Running tests
+#+begin_src sh
+  emacs -Q -l hatty.el -l test.el --eval '(ert t)'
+#+end_src
+
+It is not possible to run the ERT tests in batch mode, as the tests
+require a graphical display to measure the sice of rendered text.
 
 ** Other
 Thanks to the [[https://github.com/cursorless-dev/cursorless/][cursorless]] project for inspiration and hat designs.

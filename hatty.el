@@ -118,6 +118,8 @@ shape will be used."
 
 (cl-defun hatty--make-hat (position &key color shape)
   "Create a hat at POSITION with color COLOR and shape SHAPE."
+  (unless color (setq color (caar hatty-colors)))
+  (unless shape (setq shape (caar hatty-shapes)))
   (make-hatty--hat
    :character (hatty--normalize-character (char-after position))
    :color color
