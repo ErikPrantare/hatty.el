@@ -1,6 +1,23 @@
 * hatty.el
-A package for rendering hats over characters in emacs, allowing words
-to be indexed quickly from any point in the buffer.
+An Emacs package for rendering hats over characters, allowing words to
+be indexed quickly from any point in the buffer.
+
+This package provides a mechanism for building interfaces overcoming a
+core limitation of tools like [[https://github.com/abo-abo/avy][avy]].  With avy, it is necessary to
+perform a command to make the interface for choosing a position
+visible.  This in turn means that performing an action cannot be done
+as one fluent operation.
+
+In contrast, hatty always renders a small symbol over one of the
+characters in each word.  This makes it possible to refer to the word
+immediately, without the intermediate step of bringing up an
+interface.
+
+This library was designed while attempting to make voice control of
+Emacs more fluent, where the two-step system of avy made it impossible
+to string together a sequence of actions in a single utterance.  This
+method of indexing positions was inspired by the [[https://github.com/cursorless-dev/cursorless/][cursorless]] project,
+whose hat designs this project reuses.
 
 ** Setup
 Clone this repo and add the following to your configuration:
@@ -20,13 +37,13 @@ a hat, use ~hatty-locate~.  For example,
 
 will return the position of the yellow bolt over character "n".
 
-To change the hat colors, set ~hatty-colors~.  This should be an
-association list mapping an identifier symbol to a string,
-representing a color.  This includes color names like "red", "green",
-"magenta", as well as hex codes like "#aa7023".  See
-~list-colors-display~ for available color names ~hatty-colors~ may
-contain or exclude arbitrary colours, allowing you to remove, add or
-change the colors to your liking.
+** Configuring hat colors
+To change the hat colors, customize ~hatty-colors~.  This should be an
+association list mapping an identifier symbol to a color.  This can be
+color names like ~"red"~​, ~"green"~​, ~"magenta"~​, or hex codes like
+~"#aa7023"~​.  See ~list-colors-display~ for available color names
+~hatty-colors~ may contain or exclude arbitrary colours, allowing you
+to remove, add or change the colors to your liking.
 
 If you use a modus theme, the following will give the hats colors
 matching your theme:
@@ -52,6 +69,3 @@ increment of y signals breaking changes.
 
 It is not possible to run the ERT tests in batch mode, as the tests
 require a graphical display to measure the sice of rendered text.
-
-** Other
-Thanks to the [[https://github.com/cursorless-dev/cursorless/][cursorless]] project for inspiration and hat designs.
