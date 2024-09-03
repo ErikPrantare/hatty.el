@@ -4,7 +4,7 @@
 
 ;; Author: Erik Präntare
 ;; Keywords: convenience
-;; Version: 0.1.0
+;; Version: 0.2.1
 ;; Homepage: https://github.com/ErikPrantare/hatty.el
 ;; Package-Requires: ((emacs "29.1"))
 ;; Created: 05 Jul 2024
@@ -73,7 +73,35 @@ paths.
 
 The first element will become the default shape."
   :type '(alist :key-type symbol :value-type string)
-  :group 'hatty)
+  :group 'hatty
+;; The following notice is included for compliance with the license of
+;; the cursorless project, from which the above hat designs were
+;; copied.
+;;
+;; MIT License
+;;
+;; Copyright (c) 2021 Brandon Virgil Rule
+;;
+;; Permission is hereby granted, free of charge, to any person
+;; obtaining a copy of this software and associated documentation
+;; files (the "Software"), to deal in the Software without
+;; restriction, including without limitation the rights to use, copy,
+;; modify, merge, publish, distribute, sublicense, and/or sell copies
+;; of the Software, and to permit persons to whom the Software is
+;; furnished to do so, subject to the following conditions:
+;;
+;; The above copyright notice and this permission notice shall be
+;; included in all copies or substantial portions of the Software.
+;;
+;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+;; EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+;; MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+;; NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+;; BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+;; ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+;; CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+;; SOFTWARE.
+)
 
 (defvar hatty--hat-styles nil
   "List of hat styles to choose from.
@@ -118,6 +146,8 @@ shape will be used."
 
 (cl-defun hatty--make-hat (position &key color shape)
   "Create a hat at POSITION with color COLOR and shape SHAPE."
+  (unless color (setq color (caar hatty-colors)))
+  (unless shape (setq shape (caar hatty-shapes)))
   (make-hatty--hat
    :character (hatty--normalize-character (char-after position))
    :color color

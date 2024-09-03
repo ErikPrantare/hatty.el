@@ -25,27 +25,31 @@
 
 ;;; Code:
 
+(require 'hatty)
+
 ;; TODO Change so it doesn't need to modify the default face.  This
 ;; could straightforwardly be done when anonymous faces are properly
 ;; supported.
 (ert-deftest hatty-test-text-scaling ()
   "Size of the character is retained at different scales."
-  (dolist (height '(120 240 60  ;Nice values
-                        173 37  ;Not nice values
-                        1 1337  ;Extremes
+  (dolist (height '(120 240 60          ;Nice values
+                        173 37          ;Not nice values
+                        1 1337          ;Extremes
                         ))
     (let ((previous-height (face-attribute 'default :height))
           (previous-size)
           (current-size))
-      (set-face-attribute 'default nil :height height)
-      (with-temp-buffer
-        (switch-to-buffer (current-buffer))
-        (insert "i")
-        (setq previous-size (buffer-text-pixel-size))
-        (hatty--draw-svg-hat (hatty--make-hat (point-min)))
-        (setq current-size (buffer-text-pixel-size)))
-      (set-face-attribute 'default nil :height previous-height)
-      (should (equal previous-size current-size)))))
+      (unwind-protect
+          (progn
+            (set-face-attribute 'default nil :height height)
+            (with-temp-buffer
+              (switch-to-buffer (current-buffer))
+              (insert "i")
+              (setq previous-size (buffer-text-pixel-size))
+              (hatty--draw-svg-hat (hatty--make-hat (point-min)))
+              (setq current-size (buffer-text-pixel-size))))
+        (set-face-attribute 'default nil :height previous-height)
+        (should (equal previous-size current-size))))))
 
 (ert-deftest hatty-test-variable-width-font ()
   "Variable width fonts have the right size."
@@ -115,6 +119,7 @@ default height."
     (switch-to-buffer (current-buffer))
     (insert "aaa bbb ccc")
     (read-only-mode 1)
+    (hatty-mode)
     (hatty-reallocate-hats)))
 
 (ert-deftest hatty-test-readonly-text ()
@@ -123,6 +128,7 @@ default height."
     (switch-to-buffer (current-buffer))
     (insert "aaa bbb ccc")
     (put-text-property (point-min) (point-max) 'read-only t)
+    (hatty-mode)
     (hatty-reallocate-hats)))
 
 (ert-deftest hatty-test-anonymous-face ()
@@ -131,6 +137,7 @@ default height."
     (switch-to-buffer (current-buffer))
     (insert "aaa bbb ccc")
     (put-text-property (point-min) (point-max) 'face '(:foreground "red"))
+    (hatty-mode)
     (hatty-reallocate-hats)))
 
 (ert-deftest hatty-test-multiple-anonymous-faces ()
@@ -140,6 +147,7 @@ default height."
     (insert "aaa bbb ccc")
     (put-text-property (point-min) (point-max) 'face '((:background "black")
                                                        (:foreground "red")))
+    (hatty-mode)
     (hatty-reallocate-hats)))
 
 (ert-deftest hatty-test-image-text-property ()
@@ -160,6 +168,7 @@ default height."
                  'display
                  (svg-image (svg-create 200 200)))
     (let ((previous-size (window-text-pixel-size)))
+      (hatty-mode)
       (hatty-reallocate-hats)
       (should (equal previous-size (window-text-pixel-size))))))
 
