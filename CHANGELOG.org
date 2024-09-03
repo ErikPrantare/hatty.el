@@ -1,3 +1,6 @@
+* 0.2.1 [2024-09-04 Wed]
+- Update documentation.
+
 * 0.2.0 [2024-08-31 Sat]
 - Color specification is now made according to emacs rules, not SVG.
 - Customization variables may now be customized using ~customize~.
