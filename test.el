@@ -197,13 +197,29 @@ This is crucial to not reveal characters of password prompts."
                                 (overlay-get overlay 'hatty-hat))
                               (overlays-in (point-min) (point-max)))))))
 
-(ert-deftest hatty-test-raise-display-property ()
-  "The 'raise display property raises hatted characters."
+(ert-deftest hatty-test-raise-display-text-property ()
+  "The 'raise text display property raises hatted characters."
   (with-temp-buffer
     (switch-to-buffer (current-buffer))
     (insert "a b c")
     (add-display-text-property (+ (point-min) 2) (+ (point-min) 3) 'raise 0.23)
     (add-display-text-property (+ (point-min) 4) (+ (point-min) 5) 'raise -0.3)
+    (let ((previous-size (window-text-pixel-size)))
+      (hatty--draw-svg-hat (hatty--make-hat (+ (point-min) 2)))
+      (hatty--draw-svg-hat (hatty--make-hat (+ (point-min) 4)))
+      (should (equal previous-size (window-text-pixel-size))))))
+
+(ert-deftest hatty-test-raise-display-overlay-property ()
+  "The 'raise overlay display property raises hatted characters."
+  (with-temp-buffer
+    (switch-to-buffer (current-buffer))
+    (insert "a b c")
+    ;; Test with different display property formats: Single property
+    ;; and vector of properties.
+    (overlay-put (make-overlay (+ (point-min) 2) (+ (point-min) 3))
+                 'display '(raise 0.23))
+    (overlay-put (make-overlay (+ (point-min) 4) (+ (point-min) 5))
+                 'display [(raise -0.3)])
     (let ((previous-size (window-text-pixel-size)))
       (hatty--draw-svg-hat (hatty--make-hat (+ (point-min) 2)))
       (hatty--draw-svg-hat (hatty--make-hat (+ (point-min) 4)))

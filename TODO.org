@@ -24,5 +24,11 @@ Alternatively, provide a function for it.
 
 ** TODO Specify default hat style explicitly
 
-* Investigate
-- Cask.  However, cask does not seem to be packaged for guix.
+** Testing
+*** TODO Deduplicate text- and overlay property tests
+*** TODO Visualize before/after applying hats
+*** TODO Create visual manual tests
+For manually inspecting rendering issues not easily testable in an
+automatic fashion.  Show visual before/after, as in the previous TODO.
+*** TODO Cask for testing on different emacs versions
+However, cask does not seem to be packaged for guix.

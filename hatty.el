@@ -6,7 +6,7 @@
 ;; Keywords: convenience
 ;; Version: 0.2.1
 ;; Homepage: https://github.com/ErikPrantare/hatty.el
-;; Package-Requires: ((emacs "29.1"))
+;; Package-Requires: ((emacs "26.1"))
 ;; Created: 05 Jul 2024
 
 ;; hatty.el is free software; you can redistribute it and/or
@@ -254,9 +254,23 @@ Tokens are queried from `hatty--get-tokens'"
   (setq hatty--hats
         (with-current-buffer (window-buffer)
           (let ((tokens (hatty--get-tokens)))
-               (seq-filter
-                #'identity
-                (seq-map #'hatty--create-hat tokens))))))
+            (seq-filter
+             #'identity
+             (seq-map #'hatty--create-hat tokens))))))
+
+(defun hatty--get-raise-display-property (position)
+  "Get value of the `raise' display property at POSITION.
+
+This function looks at both text properties and overlay
+properties."
+  (let ((display-property (get-char-property position 'display)))
+    (cl-flet ((raise-property-p (property) (eq (car-safe property) 'raise)))
+      (pcase display-property
+        ((pred raise-property-p) (cadr display-property))
+        ((pred seqp)
+         (let ((property (seq-find #'raise-property-p display-property)))
+           (if property (cadr property) 0.0)))
+        (_ 0.0)))))
 
 (defun hatty--draw-svg-hat (hat)
   "Overlay character of HAT with with image of it having the hat."
@@ -289,7 +303,7 @@ Tokens are queried from `hatty--get-tokens'"
          (descent (elt font-metrics 5))
          (char-width (elt glyph-metrics 4))
          (char-height (+ ascent descent))
-         (raise (round (* char-height (or (get-display-property position 'raise) 0))))
+         (raise (round (* char-height (hatty--get-raise-display-property position))))
 
          ;; Should probably look at the final newline for this property
          (line-height (get-char-property position 'line-height))
