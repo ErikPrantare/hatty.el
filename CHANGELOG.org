@@ -1,3 +1,7 @@
+* 0.2.2 [2024-09-04 Wed]
+- Fix rendering bug pertaining to the raise display property.
+- Decrease required emacs version to 26.1.
+
 * 0.2.1 [2024-09-04 Wed]
 - Update documentation.
 
