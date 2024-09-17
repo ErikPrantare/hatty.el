@@ -39,11 +39,11 @@ will return the position of the yellow bolt over character "n".
 
 ** Configuring hat colors
 To change the hat colors, customize ~hatty-colors~.  This should be an
-association list mapping an identifier symbol to a color.  This can be
-color names like ~"red"~​, ~"green"~​, ~"magenta"~​, or hex codes like
-~"#aa7023"~​.  See ~list-colors-display~ for available color names
-~hatty-colors~ may contain or exclude arbitrary colours, allowing you
-to remove, add or change the colors to your liking.
+association list mapping an identifier symbol to a color.  A color can
+be a hex code like ~"#aa7023"~ or a named color like ~"magenta​"~ (See
+~M-x list-colors-display~ for available color names).  ~hatty-colors~
+may contain or exclude arbitrary colours, allowing you to remove, add
+or change colors to your liking.
 
 If you use a modus theme, the following will give the hats colors
 matching your theme:
