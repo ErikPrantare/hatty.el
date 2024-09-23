@@ -1,7 +1,3 @@
-* TODO Handle org links
-Currently, the visible portion does not get hatted.  Investigate why
-this is (bounds-of-thing-at-point for symbol).
-
 * TODO Figure out how to handle space above continuation lines
 I could simply avoid adding extra space in the svg for these cases.
 
@@ -20,12 +16,16 @@ Should be visible in the TODO face of this header.
 Alternatively, provide a function for it.
 
 * TODO Better default colors.
+Pull colors from default-face and ansi faces.
 
 * TODO Specify default hat style explicitly
 
 * Testing
 ** TODO Deduplicate text- and overlay property tests
-** TODO Visualize before/after applying hats
+** TODO Think about removing reliance on hatty-reallocate-hats
+This function is only available when hatty-mode is active.
+Alternatively, I could just check if the mode is active in the timers
+instead of this function.
 ** TODO Create visual manual tests
 For manually inspecting rendering issues not easily testable in an
 automatic fashion.  Show visual before/after, as in the previous TODO.

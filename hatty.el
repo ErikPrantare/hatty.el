@@ -239,7 +239,7 @@ Order tokens by importance."
 
         ;; Move to hat assignment algorithm?
         (seq-filter (lambda (token) (not (or (invisible-p (car token))
-                                             (invisible-p (cdr token))))))
+                                             (invisible-p (1- (cdr token)))))))
 
         (seq-sort-by (lambda (token)
                        (abs (- previous-point (car token))))

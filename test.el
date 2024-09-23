@@ -156,6 +156,7 @@ default height."
     (switch-to-buffer (current-buffer))
     (insert-image (svg-image (svg-create 100 100)) "a b c")
     (let ((previous-size (window-text-pixel-size)))
+      (hatty-mode)
       (hatty-reallocate-hats)
       (should (equal previous-size (window-text-pixel-size))))))
 
@@ -180,6 +181,7 @@ This is crucial to not reveal characters of password prompts."
     (switch-to-buffer (current-buffer))
     (insert "a b c")
     (put-text-property (point-min) (point-max) 'display "*****")
+    (hatty-mode)
     (hatty-reallocate-hats)
     (should (null (seq-filter (lambda (overlay)
                                 (overlay-get overlay 'hatty-hat))
@@ -236,4 +238,20 @@ This is crucial to not reveal characters of password prompts."
     ;; The line height overlay should remain, so the overlays at the
     ;; remaining position should be non-nil.
     (should (and "check 2" (overlays-in (point-min) (point-max))))))
+
+(ert-deftest hatty-test-links ()
+  "Hats should render over links."
+  (with-temp-buffer
+    (switch-to-buffer (current-buffer))
+    (insert "[abc]")
+    (add-display-text-property (point-min) (1+ (point-min)) 'invisible t)
+    (add-display-text-property (1- (point-max)) (point-max) 'invisible t)
+    (hatty-mode)
+    (hatty-reallocate-hats)
+    (thread-last
+      (overlays-in (point-min) (point-max))
+      (seq-filter (lambda (overlay) (overlay-get overlay 'hatty-hat)))
+      null
+      should-not)))
+
 ;;; tests.el ends here
