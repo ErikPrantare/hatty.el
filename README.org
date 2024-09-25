@@ -38,28 +38,27 @@ a hat, use ~hatty-locate~.  For example,
 will return the position of the yellow bolt over character "n".
 
 The available colors and shapes are specified by the variables
-~hatty-colors~ and ~hatty-shapes~.
+~hatty-colors~ and ~hatty-shapes~.  The keys in these alists are the
+symbols used to invoke ~hatty-locate~.  The special identifier
+~default~ denotes the color or shape to use whenever the argument is
+nil or absent.
 
 ** Configuring hat colors
-To change the hat colors, customize ~hatty-colors~.  This should be an
-association list mapping an identifier symbol to a color.  A color can
-be a hex code like ~"#aa7023"~ or a named color like ~"magenta​"~ (See
-~M-x list-colors-display~ for available color names).  ~hatty-colors~
-may contain or exclude arbitrary colours, allowing you to remove, add
-or change colors to your liking.
+When loading hatty, it will attempt to set the color themes for the
+hats appropriately.  You might want to customize the colors to fit
+your theme.
 
-If you use a modus theme, the following will give the hats colors
-matching your theme:
+To change the hat colors, customize ~hatty-colors~.  This can be done
+through the customize interface with ~M-x customize-variable RET
+hatty-colors RET~.  Alternatively, you can set it in your
+configuration file.
 
-#+begin_src elisp
-  (setopt hatty-colors
-          `((default . ,(modus-themes-color 'fg-dim))
-            (yellow . ,(modus-themes-color 'yellow))
-            (red . ,(modus-themes-color 'red-intense))
-            (blue .  ,(modus-themes-color 'blue-intense))
-            (pink . ,(modus-themes-color 'magenta-alt))
-            (green . ,(modus-themes-color 'green))))
-#+end_src
+~hatty-colors~ should be an association list mapping an identifier
+symbol to a color.  A color can be a hex code like ~"#aa7023"~ or a
+named color like ~"magenta​"~ (~M-x list-colors-display RET~ to see
+available color names).  ~hatty-colors~ may contain or exclude
+arbitrary identifiers and colors, allowing you to remove, add or
+change them to your liking.
 
 ** Versioning system
 This project uses [[https://semver.org/][semantic versioning]].  While still on 0.y.z, an

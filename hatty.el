@@ -36,7 +36,8 @@
 ;;; Code:
 
 (require 'subr-x)
-(require 'svg)
+(require 'svg)  ; Hat rendering
+(require 'term) ; Default colors
 
 (defgroup hatty nil
   "Index buffer locations through character hats."
@@ -45,12 +46,30 @@
   :link '(emacs-commentary-link :tag "Commentary" "hatty.el"))
 
 (defcustom hatty-colors
-  '((default . "white")
-    (yellow . "yellow")
-    (red . "red")
-    (blue . "blue")
-    (pink . "pink")
-    (green . "green"))
+  (cond
+   ((memq 'modus-vivendi custom-enabled-themes)
+    `((default . ,(modus-themes-color 'fg-dim))
+      (yellow . ,(modus-themes-color 'yellow-graph-0-bg))
+      (red . ,(modus-themes-color 'red-graph-0-bg))
+      (blue .  ,(modus-themes-color 'blue-graph-0-bg))
+      (pink . ,(modus-themes-color 'magenta-graph-0-bg))
+      (green . ,(modus-themes-color 'green-graph-0-bg))))
+
+   ;; No yellow here, as it is not very visible.
+   ((memq 'modus-operandi custom-enabled-themes)
+    `((default . ,(modus-themes-color 'fg-main))
+      (red . ,(modus-themes-color 'red-intense))
+      (blue .  ,(modus-themes-color 'blue-intense-bg))
+      (pink . ,(modus-themes-color 'magenta-graph-0-bg))
+      (green . ,(modus-themes-color 'green-graph-0-bg))))
+
+   (t
+    `((default . ,(face-attribute 'term :foreground nil t))
+      (yellow . ,(face-attribute 'term-color-yellow :foreground nil t))
+      (red . ,(face-attribute 'term-color-red :foreground nil t))
+      (blue . ,(face-attribute 'term-color-blue :foreground nil t))
+      (pink . ,(face-attribute 'term-color-magenta :foreground nil t))
+      (green . ,(face-attribute 'term-color-green :foreground nil t)))))
   "Alist of colors used in rendering hats, indexed by identifier.
 
 Identifiers must to be symbols.
