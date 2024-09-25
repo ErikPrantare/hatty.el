@@ -1,34 +1,25 @@
-* Unsorted
-** TODO Handle org links
-Currently, the visible portion does not get hatted.  Investigate why
-this is (bounds-of-thing-at-point for symbol).
-
-** TODO Figure out how to handle space above continuation lines
+* TODO Figure out how to handle space above continuation lines
 I could simply avoid adding extra space in the svg for these cases.
 
-** TODO Shortdoc
+* TODO Shortdoc
 
-** TODO handle large raise display properties
+* TODO Handle large raise display properties
 
-** TODO Handle italicized text
+* TODO Handle italicized text
 
-** TODO Handle selection of bold text
+* TODO Handle selection of bold text
 
-** TODO Fix some issues in ascent
+* TODO Fix some issues in ascent
 Should be visible in the TODO face of this header.
 
-** TODO automatic modus compatibility?
-Alternatively, provide a function for it.
-
-** TODO Better default colors.
-
-** TODO Specify default hat style explicitly
-
-** Testing
-*** TODO Deduplicate text- and overlay property tests
-*** TODO Visualize before/after applying hats
-*** TODO Create visual manual tests
+* Testing
+** TODO Deduplicate text- and overlay property tests
+** TODO Think about removing reliance on hatty-reallocate
+This function is only available when hatty-mode is active.
+Alternatively, I could just check if the mode is active in the timers
+instead of this function.
+** TODO Create visual manual tests
 For manually inspecting rendering issues not easily testable in an
 automatic fashion.  Show visual before/after, as in the previous TODO.
-*** TODO Cask for testing on different emacs versions
+** TODO Cask for testing on different emacs versions
 However, cask does not seem to be packaged for guix.

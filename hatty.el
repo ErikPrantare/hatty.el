@@ -36,7 +36,8 @@
 ;;; Code:
 
 (require 'subr-x)
-(require 'svg)
+(require 'svg)  ; Hat rendering
+(require 'term) ; Default colors
 
 (defgroup hatty nil
   "Index buffer locations through character hats."
@@ -45,23 +46,41 @@
   :link '(emacs-commentary-link :tag "Commentary" "hatty.el"))
 
 (defcustom hatty-colors
-  '((white . "white")
-    (yellow . "yellow")
-    (red . "red")
-    (blue . "blue")
-    (pink . "pink")
-    (green . "green"))
+  (cond
+   ((memq 'modus-vivendi custom-enabled-themes)
+    `((default . ,(modus-themes-color 'fg-dim))
+      (yellow . ,(modus-themes-color 'yellow-graph-0-bg))
+      (red . ,(modus-themes-color 'red-intense))
+      (blue .  ,(modus-themes-color 'blue-graph-0-bg))
+      (pink . ,(modus-themes-color 'magenta-graph-0-bg))
+      (green . ,(modus-themes-color 'green))))
+
+   ;; No yellow here, as it is not very visible.
+   ((memq 'modus-operandi custom-enabled-themes)
+    `((default . ,(modus-themes-color 'fg-main))
+      (red . ,(modus-themes-color 'red-intense))
+      (blue .  ,(modus-themes-color 'blue-intense-bg))
+      (pink . ,(modus-themes-color 'magenta-graph-0-bg))
+      (green . ,(modus-themes-color 'green-graph-0-bg))))
+
+   (t
+    `((default . ,(face-attribute 'term :foreground nil t))
+      (yellow . ,(face-attribute 'term-color-yellow :foreground nil t))
+      (red . ,(face-attribute 'term-color-red :foreground nil t))
+      (blue . ,(face-attribute 'term-color-blue :foreground nil t))
+      (pink . ,(face-attribute 'term-color-magenta :foreground nil t))
+      (green . ,(face-attribute 'term-color-green :foreground nil t)))))
   "Alist of colors used in rendering hats, indexed by identifier.
 
 Identifiers must to be symbols.
 
-The first element will become the default color."
+The identifier symbol `default' indicates the default color."
   :type '(alist :key-type symbol :value-type color)
   :group 'hatty)
 
 ;; TODO: Use proper svgs here.  Also add the other hats.
 (defcustom hatty-shapes
-  '((oval  . "M6 9C9.31371 9 12 6.98528 12 4.5C12 2.01472 9.31371 0 6 0C2.68629 0 0 2.01472 0 4.5C0 6.98528 2.68629 9 6 9Z")
+  '((default  . "M6 9C9.31371 9 12 6.98528 12 4.5C12 2.01472 9.31371 0 6 0C2.68629 0 0 2.01472 0 4.5C0 6.98528 2.68629 9 6 9Z")
     (bolt  . "M12 4V0C12 0 9 5 8 5C7 5 3 0 3 0L0 5V9C0 9 3 5 4 5C5 5 9 9 9 9L12 4Z")
     (curve  . "M6.00016 3.5C10 3.5 12 7.07378 12 9C12 4 10.5 0 6.00016 0C1.50032 0 0 4 0 9C0 7.07378 2.00032 3.5 6.00016 3.5Z")
     (fox . "M6.00001 9L0 0C0 0 3.71818 2.5 6 2.5C8.28182 2.5 12 0 12 0L6.00001 9Z")
@@ -71,7 +90,7 @@ The first element will become the default color."
 Identifiers must be symbols.  The shapes must specify valid svg
 paths.
 
-The first element will become the default shape."
+The identifier symbol `default' indicates the default ."
   :type '(alist :key-type symbol :value-type string)
   :group 'hatty
 ;; The following notice is included for compliance with the license of
@@ -106,9 +125,8 @@ The first element will become the default shape."
 (defvar hatty--hat-styles nil
   "List of hat styles to choose from.
 
-This is recalculated at the beginning of
-‘hatty-reallocate-hats’ to create all combinations from
-‘hatty-colors’ and ‘hatty-shapes’")
+This is recalculated at the beginning of ‘hatty-reallocate’ to
+create all combinations from ‘hatty-colors’ and ‘hatty-shapes’")
 
 ;; TODO: Define the structure with EIEIO instead?  For constructors.
 (cl-defstruct hatty--hat
@@ -134,8 +152,8 @@ COLOR and SHAPE should be identifiers as they occur in
 
 If COLOR or SHAPE is nil or unspecified, the default color or
 shape will be used."
-  (setq color (or color (caar hatty-colors)))
-  (setq shape (or shape (caar hatty-shapes)))
+  (setq color (or color 'default))
+  (setq shape (or shape 'default))
   (marker-position
    (hatty--hat-marker
     (seq-find (lambda (hat) (and (eq color (hatty--hat-color hat))
@@ -145,9 +163,12 @@ shape will be used."
               hatty--hats))))
 
 (cl-defun hatty--make-hat (position &key color shape)
-  "Create a hat at POSITION with color COLOR and shape SHAPE."
-  (unless color (setq color (caar hatty-colors)))
-  (unless shape (setq shape (caar hatty-shapes)))
+  "Create a hat at POSITION with color COLOR and shape SHAPE.
+
+If COLOR or SHAPE is nil or unspecified, the default color or
+shape will be used. "
+  (unless color (setq color 'default))
+  (unless shape (setq shape 'default))
   (make-hatty--hat
    :character (hatty--normalize-character (char-after position))
    :color color
@@ -239,7 +260,7 @@ Order tokens by importance."
 
         ;; Move to hat assignment algorithm?
         (seq-filter (lambda (token) (not (or (invisible-p (car token))
-                                             (invisible-p (cdr token))))))
+                                             (invisible-p (1- (cdr token)))))))
 
         (seq-sort-by (lambda (token)
                        (abs (- previous-point (car token))))
@@ -382,7 +403,7 @@ properties."
 ;; Declare now, will be set later along the minor mode.
 (defvar hatty-mode)
 
-(defun hatty-reallocate-hats ()
+(defun hatty-reallocate ()
   "Reallocate hats."
   (interactive)
   (with-current-buffer (window-buffer)
@@ -409,19 +430,21 @@ This should restore the buffer state as it was before hatty was enabled."
 (defvar hatty--hat-reallocate-timer (timer-create))
 ;; Not sure what the best way to disable this whenever hatty-mode is
 ;; disabled in all buffers.  Currently I just let it always run, as
-;; hatty-reallocate-hats bails if it is not enabled anyway.
+;; hatty-reallocate bails if it is not enabled anyway.
 (defvar hatty--hat-reallocate-idle-timer
-  (run-with-idle-timer 0.2 t #'hatty-reallocate-hats))
+  (run-with-idle-timer 0.2 t #'hatty-reallocate))
 
-(defun hatty--request-reallocation ()
+(defun hatty-request-reallocation ()
   "Signal that the current buffer will need hat reallocation.
 
-The function will try to avoid multiple rapid reallocations in a
-row by deferring reallocation by a small amount of time and
-cancel any previously unperformed reallocations."
+The function will try to avoid rapid consecutive reallocations by
+deferring reallocation by a small amount of time and counselling
+any previously unperformed reallocations.
+
+To reallocate immediately, use `hatty-reallocate' instead."
   (cancel-timer hatty--hat-reallocate-timer)
   (setq hatty--hat-reallocate-timer
-        (run-with-timer 0.1 nil #'hatty-reallocate-hats)))
+        (run-with-timer 0.1 nil #'hatty-reallocate)))
 
 ;;;###autoload
 (define-minor-mode hatty-mode
@@ -437,12 +460,6 @@ cancel any previously unperformed reallocations."
 ;;;###autoload
 (define-globalized-minor-mode global-hatty-mode hatty-mode hatty-mode
   :group 'hatty)
-
-(defmacro hatty-with-hat-reallocate (&rest body)
-  "Evaluate BODY and reallocate hats."
-  `(progn
-     ,@body
-     (hatty--request-reallocation)))
 
 (provide 'hatty)
 ;;; hatty.el ends here

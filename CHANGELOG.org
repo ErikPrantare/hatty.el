@@ -1,12 +1,24 @@
+* 0.3.0 [2024-09-25 Wed]
+- When loading hatty, it will now try to pick colors appropriate for
+  the color theme of the user.
+- The defaut hat color and shape is now identified by the symbol
+  ~default~.
+- Hats are now properly rendered for the last word of links in
+  org-mode.
+- ~hatty-reallocate-hats~ has been renamed to ~hatty-reallocate~.
+- ~hatty-request-reallocation~ has been added.  This function tries to
+  avoid multiple rapid executions of ~hatty-reallocate~.
+- ~hatty-with-hat-reallocate~ has been removed.
+
 * 0.2.2 [2024-09-04 Wed]
 - Fix rendering bug pertaining to the raise display property.
-- Decrease required emacs version to 26.1.
+- Decrease required Emacs version to 26.1.
 
 * 0.2.1 [2024-09-04 Wed]
 - Update documentation.
 
 * 0.2.0 [2024-08-31 Sat]
-- Color specification is now made according to emacs rules, not SVG.
+- Color specification is now made according to Emacs rules, not SVG.
 - Customization variables may now be customized using ~customize~.
 - ~hatty-mode~ is now buffer-local.  Use ~global-hatty-mode~ to enable
   it globally.
