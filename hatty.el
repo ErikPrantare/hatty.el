@@ -125,9 +125,8 @@ The identifier symbol `default' indicates the default ."
 (defvar hatty--hat-styles nil
   "List of hat styles to choose from.
 
-This is recalculated at the beginning of
-‘hatty-reallocate-hats’ to create all combinations from
-‘hatty-colors’ and ‘hatty-shapes’")
+This is recalculated at the beginning of ‘hatty-reallocate’ to
+create all combinations from ‘hatty-colors’ and ‘hatty-shapes’")
 
 ;; TODO: Define the structure with EIEIO instead?  For constructors.
 (cl-defstruct hatty--hat
@@ -404,7 +403,7 @@ properties."
 ;; Declare now, will be set later along the minor mode.
 (defvar hatty-mode)
 
-(defun hatty-reallocate-hats ()
+(defun hatty-reallocate ()
   "Reallocate hats."
   (interactive)
   (with-current-buffer (window-buffer)
@@ -431,9 +430,9 @@ This should restore the buffer state as it was before hatty was enabled."
 (defvar hatty--hat-reallocate-timer (timer-create))
 ;; Not sure what the best way to disable this whenever hatty-mode is
 ;; disabled in all buffers.  Currently I just let it always run, as
-;; hatty-reallocate-hats bails if it is not enabled anyway.
+;; hatty-reallocate bails if it is not enabled anyway.
 (defvar hatty--hat-reallocate-idle-timer
-  (run-with-idle-timer 0.2 t #'hatty-reallocate-hats))
+  (run-with-idle-timer 0.2 t #'hatty-reallocate))
 
 (defun hatty-request-reallocation ()
   "Signal that the current buffer will need hat reallocation.
@@ -442,10 +441,10 @@ The function will try to avoid rapid consecutive reallocations by
 deferring reallocation by a small amount of time and counselling
 any previously unperformed reallocations.
 
-To reallocate immediately, use `hatty-reallocate-hats' instead."
+To reallocate immediately, use `hatty-reallocate' instead."
   (cancel-timer hatty--hat-reallocate-timer)
   (setq hatty--hat-reallocate-timer
-        (run-with-timer 0.1 nil #'hatty-reallocate-hats)))
+        (run-with-timer 0.1 nil #'hatty-reallocate)))
 
 ;;;###autoload
 (define-minor-mode hatty-mode

@@ -14,7 +14,7 @@ Should be visible in the TODO face of this header.
 
 * Testing
 ** TODO Deduplicate text- and overlay property tests
-** TODO Think about removing reliance on hatty-reallocate-hats
+** TODO Think about removing reliance on hatty-reallocate
 This function is only available when hatty-mode is active.
 Alternatively, I could just check if the mode is active in the timers
 instead of this function.

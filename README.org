@@ -70,4 +70,4 @@ increment of y signals breaking changes.
 #+end_src
 
 It is not possible to run the ERT tests in batch mode, as the tests
-require a graphical display to measure the sice of rendered text.
+require a graphical display to measure the size of rendered text.

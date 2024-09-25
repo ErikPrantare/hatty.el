@@ -120,7 +120,7 @@ default height."
     (insert "aaa bbb ccc")
     (read-only-mode 1)
     (hatty-mode)
-    (hatty-reallocate-hats)))
+    (hatty-reallocate)))
 
 (ert-deftest hatty-test-readonly-text ()
   "Adding hats should be possible for read-only text."
@@ -129,7 +129,7 @@ default height."
     (insert "aaa bbb ccc")
     (put-text-property (point-min) (point-max) 'read-only t)
     (hatty-mode)
-    (hatty-reallocate-hats)))
+    (hatty-reallocate)))
 
 (ert-deftest hatty-test-anonymous-face ()
   "Do not explode when encountering anonymous faces."
@@ -138,7 +138,7 @@ default height."
     (insert "aaa bbb ccc")
     (put-text-property (point-min) (point-max) 'face '(:foreground "red"))
     (hatty-mode)
-    (hatty-reallocate-hats)))
+    (hatty-reallocate)))
 
 (ert-deftest hatty-test-multiple-anonymous-faces ()
   "Do not explode when encountering multiple anonymous faces."
@@ -148,7 +148,7 @@ default height."
     (put-text-property (point-min) (point-max) 'face '((:background "black")
                                                        (:foreground "red")))
     (hatty-mode)
-    (hatty-reallocate-hats)))
+    (hatty-reallocate)))
 
 (ert-deftest hatty-test-image-text-property ()
   "Do not add hats if an image is displaying as a text property."
@@ -157,7 +157,7 @@ default height."
     (insert-image (svg-image (svg-create 100 100)) "a b c")
     (let ((previous-size (window-text-pixel-size)))
       (hatty-mode)
-      (hatty-reallocate-hats)
+      (hatty-reallocate)
       (should (equal previous-size (window-text-pixel-size))))))
 
 (ert-deftest hatty-test-image-overlay ()
@@ -170,7 +170,7 @@ default height."
                  (svg-image (svg-create 200 200)))
     (let ((previous-size (window-text-pixel-size)))
       (hatty-mode)
-      (hatty-reallocate-hats)
+      (hatty-reallocate)
       (should (equal previous-size (window-text-pixel-size))))))
 
 (ert-deftest hatty-test-string-property ()
@@ -182,7 +182,7 @@ This is crucial to not reveal characters of password prompts."
     (insert "a b c")
     (put-text-property (point-min) (point-max) 'display "*****")
     (hatty-mode)
-    (hatty-reallocate-hats)
+    (hatty-reallocate)
     (should (null (seq-filter (lambda (overlay)
                                 (overlay-get overlay 'hatty-hat))
                               (overlays-in (point-min) (point-max)))))))
@@ -247,7 +247,7 @@ This is crucial to not reveal characters of password prompts."
     (add-display-text-property (point-min) (1+ (point-min)) 'invisible t)
     (add-display-text-property (1- (point-max)) (point-max) 'invisible t)
     (hatty-mode)
-    (hatty-reallocate-hats)
+    (hatty-reallocate)
     (thread-last
       (overlays-in (point-min) (point-max))
       (seq-filter (lambda (overlay) (overlay-get overlay 'hatty-hat)))
