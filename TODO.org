@@ -18,8 +18,6 @@ Alternatively, provide a function for it.
 * TODO Better default colors.
 Pull colors from default-face and ansi faces.
 
-* TODO Specify default hat style explicitly
-
 * Testing
 ** TODO Deduplicate text- and overlay property tests
 ** TODO Think about removing reliance on hatty-reallocate-hats

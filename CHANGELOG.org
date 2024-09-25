@@ -1,5 +1,7 @@
 * NEXT
 - Hats are now rendered for the last word of links in org-mode.
+- The default hat color and shape is now identified by the symbol
+  ~default~.
 
 * 0.2.2 [2024-09-04 Wed]
 - Fix rendering bug pertaining to the raise display property.

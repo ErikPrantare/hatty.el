@@ -37,6 +37,9 @@ a hat, use ~hatty-locate~.  For example,
 
 will return the position of the yellow bolt over character "n".
 
+The available colors and shapes are specified by the variables
+~hatty-colors~ and ~hatty-shapes~.
+
 ** Configuring hat colors
 To change the hat colors, customize ~hatty-colors~.  This should be an
 association list mapping an identifier symbol to a color.  A color can
@@ -50,7 +53,7 @@ matching your theme:
 
 #+begin_src elisp
   (setopt hatty-colors
-          `((white . ,(modus-themes-color 'fg-dim))
+          `((default . ,(modus-themes-color 'fg-dim))
             (yellow . ,(modus-themes-color 'yellow))
             (red . ,(modus-themes-color 'red-intense))
             (blue .  ,(modus-themes-color 'blue-intense))

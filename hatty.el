@@ -45,7 +45,7 @@
   :link '(emacs-commentary-link :tag "Commentary" "hatty.el"))
 
 (defcustom hatty-colors
-  '((white . "white")
+  '((default . "white")
     (yellow . "yellow")
     (red . "red")
     (blue . "blue")
@@ -55,13 +55,13 @@
 
 Identifiers must to be symbols.
 
-The first element will become the default color."
+The identifier symbol `default' indicates the default color."
   :type '(alist :key-type symbol :value-type color)
   :group 'hatty)
 
 ;; TODO: Use proper svgs here.  Also add the other hats.
 (defcustom hatty-shapes
-  '((oval  . "M6 9C9.31371 9 12 6.98528 12 4.5C12 2.01472 9.31371 0 6 0C2.68629 0 0 2.01472 0 4.5C0 6.98528 2.68629 9 6 9Z")
+  '((default  . "M6 9C9.31371 9 12 6.98528 12 4.5C12 2.01472 9.31371 0 6 0C2.68629 0 0 2.01472 0 4.5C0 6.98528 2.68629 9 6 9Z")
     (bolt  . "M12 4V0C12 0 9 5 8 5C7 5 3 0 3 0L0 5V9C0 9 3 5 4 5C5 5 9 9 9 9L12 4Z")
     (curve  . "M6.00016 3.5C10 3.5 12 7.07378 12 9C12 4 10.5 0 6.00016 0C1.50032 0 0 4 0 9C0 7.07378 2.00032 3.5 6.00016 3.5Z")
     (fox . "M6.00001 9L0 0C0 0 3.71818 2.5 6 2.5C8.28182 2.5 12 0 12 0L6.00001 9Z")
@@ -71,7 +71,7 @@ The first element will become the default color."
 Identifiers must be symbols.  The shapes must specify valid svg
 paths.
 
-The first element will become the default shape."
+The identifier symbol `default' indicates the default ."
   :type '(alist :key-type symbol :value-type string)
   :group 'hatty
 ;; The following notice is included for compliance with the license of
@@ -134,8 +134,8 @@ COLOR and SHAPE should be identifiers as they occur in
 
 If COLOR or SHAPE is nil or unspecified, the default color or
 shape will be used."
-  (setq color (or color (caar hatty-colors)))
-  (setq shape (or shape (caar hatty-shapes)))
+  (setq color (or color 'default))
+  (setq shape (or shape 'default))
   (marker-position
    (hatty--hat-marker
     (seq-find (lambda (hat) (and (eq color (hatty--hat-color hat))
@@ -145,9 +145,12 @@ shape will be used."
               hatty--hats))))
 
 (cl-defun hatty--make-hat (position &key color shape)
-  "Create a hat at POSITION with color COLOR and shape SHAPE."
-  (unless color (setq color (caar hatty-colors)))
-  (unless shape (setq shape (caar hatty-shapes)))
+  "Create a hat at POSITION with color COLOR and shape SHAPE.
+
+If COLOR or SHAPE is nil or unspecified, the default color or
+shape will be used. "
+  (unless color (setq color 'default))
+  (unless shape (setq shape 'default))
   (make-hatty--hat
    :character (hatty--normalize-character (char-after position))
    :color color
