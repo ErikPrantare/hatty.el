@@ -435,12 +435,14 @@ This should restore the buffer state as it was before hatty was enabled."
 (defvar hatty--hat-reallocate-idle-timer
   (run-with-idle-timer 0.2 t #'hatty-reallocate-hats))
 
-(defun hatty--request-reallocation ()
+(defun hatty-request-reallocation ()
   "Signal that the current buffer will need hat reallocation.
 
-The function will try to avoid multiple rapid reallocations in a
-row by deferring reallocation by a small amount of time and
-cancel any previously unperformed reallocations."
+The function will try to avoid rapid consecutive reallocations by
+deferring reallocation by a small amount of time and counselling
+any previously unperformed reallocations.
+
+To reallocate immediately, use `hatty-reallocate-hats' instead."
   (cancel-timer hatty--hat-reallocate-timer)
   (setq hatty--hat-reallocate-timer
         (run-with-timer 0.1 nil #'hatty-reallocate-hats)))
@@ -459,12 +461,6 @@ cancel any previously unperformed reallocations."
 ;;;###autoload
 (define-globalized-minor-mode global-hatty-mode hatty-mode hatty-mode
   :group 'hatty)
-
-(defmacro hatty-with-hat-reallocate (&rest body)
-  "Evaluate BODY and reallocate hats."
-  `(progn
-     ,@body
-     (hatty--request-reallocation)))
 
 (provide 'hatty)
 ;;; hatty.el ends here

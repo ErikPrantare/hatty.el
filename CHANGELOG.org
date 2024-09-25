@@ -4,6 +4,9 @@
   ~default~.
 - When loading hatty, it will now try to pick colors appropriate for
   the color theme of the user.
+- ~hatty-request-reallocation~ has been added.  This function tries to
+  avoid multiple rapid executions of ~hatty-reallocate-hats~.
+- ~hatty-with-hat-reallocate~ has been removed.
 
 * 0.2.2 [2024-09-04 Wed]
 - Fix rendering bug pertaining to the raise display property.
