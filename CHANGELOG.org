@@ -1,9 +1,10 @@
-* NEXT
-- Hats are now rendered for the last word of links in org-mode.
-- The default hat color and shape is now identified by the symbol
-  ~default~.
+* 0.3.0 [2024-09-25 Wed]
 - When loading hatty, it will now try to pick colors appropriate for
   the color theme of the user.
+- The defaut hat color and shape is now identified by the symbol
+  ~default~.
+- Hats are now properly rendered for the last word of links in
+  org-mode.
 - ~hatty-reallocate-hats~ has been renamed to ~hatty-reallocate~.
 - ~hatty-request-reallocation~ has been added.  This function tries to
   avoid multiple rapid executions of ~hatty-reallocate~.
