@@ -50,10 +50,10 @@
    ((memq 'modus-vivendi custom-enabled-themes)
     `((default . ,(modus-themes-color 'fg-dim))
       (yellow . ,(modus-themes-color 'yellow-graph-0-bg))
-      (red . ,(modus-themes-color 'red-graph-0-bg))
+      (red . ,(modus-themes-color 'red-intense))
       (blue .  ,(modus-themes-color 'blue-graph-0-bg))
       (pink . ,(modus-themes-color 'magenta-graph-0-bg))
-      (green . ,(modus-themes-color 'green-graph-0-bg))))
+      (green . ,(modus-themes-color 'green))))
 
    ;; No yellow here, as it is not very visible.
    ((memq 'modus-operandi custom-enabled-themes)
