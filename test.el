@@ -63,6 +63,12 @@ non-nil) and that ALLOCATION does not."
          ,allocation
          (should (equal setup-size (window-text-pixel-size)))))))
 
+(defun hatty-test--draw-hat-at (position)
+  (hatty--draw-svg-hat
+   (hatty--make-hat position
+                    (cons position (1+ position))
+                    '(default . default))))
+
 ;; TODO Change so it doesn't need to modify the default face.  This
 ;; could straightforwardly be done when anonymous faces are properly
 ;; supported.
@@ -77,10 +83,7 @@ non-nil) and that ALLOCATION does not."
           (hatty-test-preserves-pixel-size
            :content "i"
            :setup (set-face-attribute 'default nil :height height)
-           :allocation (hatty--draw-svg-hat
-                        (hatty--make-hat (point-min)
-                                         (cons (point-min) (point-max))
-                                         '(default . default))))
+           :allocation (hatty-test--draw-hat-at (point-min)))
         (set-face-attribute 'default nil :height previous-height)))))
 
 (ert-deftest hatty--variable-width-font ()
@@ -102,10 +105,7 @@ non-nil) and that ALLOCATION does not."
      :content "i\n"
      :setup (put-text-property (point-min) (point-max)
                                'line-height line-height)
-     :allocation (hatty--draw-svg-hat
-                  (hatty--make-hat (point-min)
-                                   (cons (point-min) (1+ (point-min)))
-                                   '(default . default))))))
+     :allocation (hatty-test--draw-hat-at (point-min)))))
 
 (defface hatty--test-face-large
   '((t . (:height 2.0 :inherit default)))
@@ -123,10 +123,7 @@ non-nil) and that ALLOCATION does not."
                                  'line-height line-height)
               (put-text-property (point-min) (point-max)
                                  'face 'hatty--test-face-large))
-     :allocation (hatty--draw-svg-hat
-                  (hatty--make-hat (point-min)
-                                   (cons (point-min) (1+ (point-min)))
-                                   '(default . default))))))
+     :allocation (hatty-test--draw-hat-at (point-min)))))
 
 (ert-deftest hatty--invisible-text ()
   "Invisible text should not contribute tokens."
@@ -181,7 +178,7 @@ non-nil) and that ALLOCATION does not."
   (hatty-test-preserves-pixel-size
    :content "a b c"
    :setup (put-text-property (point-min) (point-max)
-                              'display (svg-image (svg-create 100 100)))
+                             'display (svg-image (svg-create 100 100)))
    :allocation (progn (hatty-mode) (hatty-reallocate))))
 
 (ert-deftest hatty--image-overlay ()
@@ -189,8 +186,8 @@ non-nil) and that ALLOCATION does not."
   (hatty-test-preserves-pixel-size
    :content "a b c"
    :setup (overlay-put (make-overlay (point-min) (point-max))
-                        'display
-                        (svg-image (svg-create 200 200)))
+                       'display
+                       (svg-image (svg-create 200 200)))
    :allocation (progn (hatty-mode) (hatty-reallocate))))
 
 (ert-deftest hatty--string-property ()
@@ -227,14 +224,8 @@ This is crucial to not reveal characters of password prompts."
             (add-display-text-property (+ (point-min) 4) (+ (point-min) 5)
                                        'raise -0.3))
    :allocation (progn
-                 (hatty--draw-svg-hat
-                  (hatty--make-hat (+ (point-min) 2)
-                                   (cons (+ (point-min) 2) (+ (point-min) 3))
-                                   '(default . default)))
-                 (hatty--draw-svg-hat
-                  (hatty--make-hat (+ (point-min) 4)
-                                   (cons (+ (point-min) 4) (+ (point-min) 5))
-                                   '(default . default))))))
+                 (hatty-test--draw-hat-at (+ (point-min) 2))
+                 (hatty-test--draw-hat-at (+ (point-min) 4)))))
 
 (ert-deftest hatty--raise-display-overlay-property ()
   "The 'raise overlay display property raises hatted characters."
@@ -244,18 +235,12 @@ This is crucial to not reveal characters of password prompts."
    ;; and vector of properties.
    :setup (progn
             (overlay-put (make-overlay (+ (point-min) 2) (+ (point-min) 3))
-                          'display '(raise 0.23))
+                         'display '(raise 0.23))
             (overlay-put (make-overlay (+ (point-min) 4) (+ (point-min) 5))
-                          'display [(raise -0.3)]))
+                         'display [(raise -0.3)]))
    :allocation (progn
-                 (hatty--draw-svg-hat
-                  (hatty--make-hat (+ (point-min) 2)
-                                   (cons (+ (point-min) 2) (+ (point-min) 3))
-                                   '(default . default)))
-                 (hatty--draw-svg-hat
-                  (hatty--make-hat (+ (point-min) 4)
-                                   (cons (+ (point-min) 4) (+ (point-min) 5))
-                                   '(default . default))))))
+                 (hatty-test--draw-hat-at (+ (point-min) 2))
+                 (hatty-test--draw-hat-at (+ (point-min) 4)))))
 
 (ert-deftest hatty--deleted-buffer-content-line-height ()
   "Deleting buffer contents should preserve line height overlay."
@@ -274,9 +259,7 @@ This is crucial to not reveal characters of password prompts."
 Only the last visual line is affected by line height.  Check that
 this quality is retained when rendering hats."
   (hatty-test-preserves-pixel-size
-   :content (concat (apply #'concat
-                           (make-list 100
-                             "aaaaaaaaa bbbbbbbbbbbbb cccccccccccc "))
+   :content (concat (apply #'concat (make-list 100 "aaaaaaaaa bbbbbbbbbbbbb cccccccccccc "))
                     "\n")
    :setup (hatty-mode)
    :setup-retains-pixel-size t
