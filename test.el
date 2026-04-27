@@ -240,8 +240,14 @@ This is crucial to not reveal characters of password prompts."
     (overlay-put (make-overlay (+ (point-min) 4) (+ (point-min) 5))
                  'display [(raise -0.3)])
     (let ((previous-size (window-text-pixel-size)))
-      (hatty-mode)
-      (hatty-reallocate)
+      (hatty--draw-svg-hat
+       (hatty--make-hat (+ (point-min) 2)
+                        (cons (+ (point-min) 2) (+ (point-min) 3))
+                        '(default . default)))
+      (hatty--draw-svg-hat
+       (hatty--make-hat (+ (point-min) 4)
+                        (cons (+ (point-min) 4) (+ (point-min) 5))
+                        '(default . default)))
       (should (equal previous-size (window-text-pixel-size))))))
 
 (ert-deftest hatty--deleted-buffer-content-line-height ()

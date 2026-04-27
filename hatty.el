@@ -623,7 +623,7 @@ returns nil."
            (descent (elt font-metrics 5))
            (char-width (elt glyph-metrics 4))
            (char-height (+ ascent descent))
-           (raise (round
+           (raise (truncate
                    (* char-height
                       (hatty--get-raise-display-property position))))
 
