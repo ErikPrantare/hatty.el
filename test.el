@@ -45,12 +45,12 @@
             (with-temp-buffer
               (switch-to-buffer (current-buffer))
               (insert "i")
-              (setq previous-size (buffer-text-pixel-size))
+              (setq previous-size (window-text-pixel-size))
               (hatty--draw-svg-hat
                (hatty--make-hat (point-min)
                                 (cons (point-min) (point-max))
                                 '(default . default)))
-              (setq current-size (buffer-text-pixel-size))))
+              (setq current-size (window-text-pixel-size))))
         (set-face-attribute 'default nil :height previous-height)
         (should (equal previous-size current-size))))))
 
@@ -75,42 +75,37 @@
   (dolist (line-height '( 2.0 1.5       ;Nice values
                           1.73 2.37     ;Not nice values
                           ))
-    (let ((previous-size)
-          (current-size))
-      (with-temp-buffer
-        (switch-to-buffer (current-buffer))
-        (insert "i\n")
-        (let ((previous-height (cdr (window-text-pixel-size))))
-          (put-text-property (point-min) (point-max) 'line-height line-height)
-          (hatty--draw-svg-hat
-           (hatty--make-hat (point-min)
-                            (cons (point-min) (1+ (point-min)))
-                            '(default . default)))
-          (should (= (* line-height previous-height) (cdr (window-text-pixel-size)))))))))
+    (with-temp-buffer
+      (switch-to-buffer (current-buffer))
+      (insert "i\n")
+      (put-text-property (point-min) (point-max) 'line-height line-height)
+      (let ((height-before (cdr (window-text-pixel-size))))
+        (hatty--draw-svg-hat
+         (hatty--make-hat (point-min)
+                          (cons (point-min) (1+ (point-min)))
+                          '(default . default)))
+        (should (= height-before (cdr (window-text-pixel-size))))))))
 
 (defface hatty--test-face-large
   '((t . (:height 2.0 :inherit default)))
   "TODO: Remove this when anonymous faces are properly supported.")
 
 (ert-deftest hatty--line-height-large-face ()
-  "Do not use extra line height if character is larger than
-default height."
+  "Do not use extra line height if character is larger than default height."
   (dolist (line-height '( 2.0 1.5       ;Nice values
                           1.73 2.37     ;Not nice values
                           ))
-    (let ((previous-size)
-          (current-size))
       (with-temp-buffer
         (switch-to-buffer (current-buffer))
         (insert "i\n")
-        (let ((previous-height (cdr (window-text-pixel-size))))
-          (put-text-property (point-min) (point-max) 'line-height line-height)
-          (put-text-property (point-min) (point-max) 'face 'hatty--test-face-large)
+        (put-text-property (point-min) (point-max) 'line-height line-height)
+        (put-text-property (point-min) (point-max) 'face 'hatty--test-face-large)
+        (let ((height-before (cdr (window-text-pixel-size))))
           (hatty--draw-svg-hat
            (hatty--make-hat (point-min)
                             (cons (point-min) (1+ (point-min)))
                             '(default . default)))
-          (should (= (* line-height previous-height) (cdr (window-text-pixel-size)))))))))
+          (should (= height-before (cdr (window-text-pixel-size))))))))
 
 (ert-deftest hatty--invisible-text ()
   "Invisible text should not contribute tokens."
@@ -200,7 +195,7 @@ This is crucial to not reveal characters of password prompts."
     (hatty-mode)
     (hatty-reallocate)
     (should (null (seq-filter (lambda (overlay)
-                                (overlay-get overlay 'hatty-hat))
+                                (overlay-get overlay 'hatty--hat))
                               (overlays-in (point-min) (point-max)))))))
 
 (ert-deftest hatty--string-overlay ()
@@ -212,7 +207,7 @@ This is crucial to not reveal characters of password prompts."
     (insert "a b c")
     (overlay-put (make-overlay (point-min) (point-max)) 'display "*****")
     (should (null (seq-filter (lambda (overlay)
-                                (overlay-get overlay 'hatty-hat))
+                                (overlay-get overlay 'hatty--hat))
                               (overlays-in (point-min) (point-max)))))))
 
 (ert-deftest hatty--raise-display-text-property ()
@@ -272,7 +267,7 @@ This is crucial to not reveal characters of password prompts."
     (hatty-reallocate)
     (thread-last
       (overlays-in (point-min) (point-max))
-      (seq-filter (lambda (overlay) (overlay-get overlay 'hatty-hat)))
+      (seq-filter (lambda (overlay) (overlay-get overlay 'hatty--hat)))
       null
       should-not)))
 
