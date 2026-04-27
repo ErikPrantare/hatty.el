@@ -595,67 +595,73 @@ returns nil."
   ;; font-at will return nil.  For now, we just bail out if this
   ;; occurs.  Should probably be done somewhere else...
   (when (font-at (marker-position (hatty--hat-marker hat)))
-    (let* ((position (marker-position (hatty--hat-marker hat)))
-           (text (buffer-substring-no-properties position (1+ position)))
-           ;; I will pretend that get-char-property yields all the faces
-           ;; used in the deduction of the face properties for display.
-           ;; I will also pretend that anything not a face or list of
-           ;; faces does not contribute to the display.  These
-           ;; assumptions might not be true; Consult Properties with
-           ;; Special Meanings in the emacs manual.
-           (faces (append (let ((face-spec (get-char-property position 'face)))
-                            (cond
-                             ((facep face-spec) (list face-spec))
-                             ((consp face-spec)
-                              ;; Only handle named faces for now
-                              (seq-filter #'facep face-spec))
-                             (t '())))
-                          (list 'default)))
-           (font-family (face-attribute (car faces) :family nil (cdr faces)))
-           (font-weight (face-attribute (car faces) :weight nil (cdr faces)))
+    (pcase-let* ((position (marker-position (hatty--hat-marker hat)))
+                 (text (buffer-substring-no-properties position (1+ position)))
+                 ;; I will pretend that get-char-property yields all the faces
+                 ;; used in the deduction of the face properties for display.
+                 ;; I will also pretend that anything not a face or list of
+                 ;; faces does not contribute to the display.  These
+                 ;; assumptions might not be true; Consult Properties with
+                 ;; Special Meanings in the emacs manual.
+                 (faces (append (let ((face-spec (get-char-property position 'face)))
+                                  (cond
+                                   ((facep face-spec) (list face-spec))
+                                   ((consp face-spec)
+                                    ;; Only handle named faces for now
+                                    (seq-filter #'facep face-spec))
+                                   (t '())))
+                                (list 'default)))
+                 (font-family (face-attribute (car faces) :family nil (cdr faces)))
+                 (font-weight (face-attribute (car faces) :weight nil (cdr faces)))
 
-           (font (font-at position))
-           (font-metrics (query-font font))
-           (glyph-metrics (elt (font-get-glyphs font position (1+ position)) 0))
+                 (font (font-at position))
+                 (font-metrics (query-font font))
+                 (glyph-metrics (elt (font-get-glyphs font position (1+ position)) 0))
 
-           (font-size (elt font-metrics 2))
-           (ascent (elt font-metrics 4))
-           (descent (elt font-metrics 5))
-           (char-width (elt glyph-metrics 4))
-           (char-height (+ ascent descent))
-           (raise (truncate
-                   (* char-height
-                      (hatty--get-raise-display-property position))))
+                 (font-size (elt font-metrics 2))
+                 (ascent (elt font-metrics 4))
+                 (descent (elt font-metrics 5))
+                 (char-width (elt glyph-metrics 4))
+                 (char-height (+ ascent descent))
+                 (raise (truncate
+                         (* char-height
+                            (hatty--get-raise-display-property position))))
 
-           ;; Should probably look at the final newline for this property
-           (line-height (get-char-property position 'line-height))
-           (default-char-height (frame-char-height))
-           (default-line-height
-            (cond
-             ((hatty--hat-space-deprived-p hat) default-char-height)
-             ((integerp line-height) (max default-char-height line-height))
-             ((floatp line-height) (* default-char-height line-height))
-             (t default-char-height)))
+                 (`(,line-height ,default-char-height)
+                  (save-excursion
+                    (goto-char position)
+                    (skip-chars-forward "^\n" (+ 1000 position))
+                    (if (char-after)
+                        (list (get-char-property (point) 'line-height)
+                              (+ (elt (query-font (font-at (point))) 4)
+                                 (elt (query-font (font-at (point))) 5)))
+                      (list nil char-height))))
+                 (default-line-height
+                  (cond
+                   ((hatty--hat-space-deprived-p hat) default-char-height)
+                   ((integerp line-height) (max default-char-height line-height))
+                   ((floatp line-height) (* default-char-height line-height))
+                   (t default-char-height)))
 
-           (svg-height (max default-line-height char-height))
-           (svg-width char-width)
-           ;; TODO: We should probably calculate the bounding box of
-           ;; the empty space above the typical char, and fit the
-           ;; curve inside that, instead of using this equation
-           ;; derived from trial-and-error.
-           (scale (* hatty-scale-factor
-                     ;; Magic number 200.0 was picked to look good.
-                     (/ (face-attribute 'default :height) 200.0)))
+                 (svg-height (max default-line-height char-height))
+                 (svg-width char-width)
+                 ;; TODO: We should probably calculate the bounding box of
+                 ;; the empty space above the typical char, and fit the
+                 ;; curve inside that, instead of using this equation
+                 ;; derived from trial-and-error.
+                 (scale (* hatty-scale-factor
+                           ;; Magic number 200.0 was picked to look good.
+                           (/ (face-attribute 'default :height) 200.0)))
 
-           ;; Convert from emacs color to 6 letter svg hexcode.
-           (svg-hat-color
-            (let ((color
-                   (color-values
-                    (alist-get (hatty--hat-color hat) hatty-colors))))
-              (format "#%02X%02X%02X"
-                      (/ (nth 0 color) 256)
-                      (/ (nth 1 color) 256)
-                      (/ (nth 2 color) 256)))))
+                 ;; Convert from emacs color to 6 letter svg hexcode.
+                 (svg-hat-color
+                  (let ((color
+                         (color-values
+                          (alist-get (hatty--hat-color hat) hatty-colors))))
+                    (format "#%02X%02X%02X"
+                            (/ (nth 0 color) 256)
+                            (/ (nth 1 color) 256)
+                            (/ (nth 2 color) 256)))))
 
       (list
        :svg-hat-color svg-hat-color

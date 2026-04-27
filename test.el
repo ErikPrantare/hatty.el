@@ -89,12 +89,16 @@ non-nil) and that ALLOCATION does not."
 (ert-deftest hatty--variable-width-font ()
   "Variable width fonts have the right size."
   (hatty-test-preserves-pixel-size
+   :content "i\n"
+   :setup (buffer-face-set 'variable-pitch)
+   :allocation (hatty-test--draw-hat-at (point-min))))
+
+(ert-deftest hatty--variable-width-font-no-newline ()
+  "Variable width fonts have the right size."
+  (hatty-test-preserves-pixel-size
    :content "i"
-   :setup (put-text-property (point-min) (point-max) 'face 'variable-pitch)
-   :allocation (hatty--draw-svg-hat
-                (hatty--make-hat (point-min)
-                                 (cons (point-min) (point-max))
-                                 '(default . default)))))
+   :setup (buffer-face-set 'variable-pitch)
+   :allocation (hatty-test--draw-hat-at (point-min))))
 
 (ert-deftest hatty--extra-line-height ()
   "If extra line height is present, use it."
