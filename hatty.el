@@ -692,15 +692,14 @@ returns nil."
          (scale (plist-get parameters :scale))
          (svg (svg-create svg-width svg-height)))
 
-    ;; Emacs 31: Default fill no longer :foreground.  Inspect NEWS for
-    ;; how to use correct color.
     (svg-text svg text
               :stroke-width 0
               :font-family font-family
               :font-size font-size
               :font-weight font-weight
               :x 0
-              :y (- svg-height descent))
+              :y (- svg-height descent)
+              :fill "currentcolor")
 
     (svg-node svg 'path
               ;; Transformations are applied right-to-left
