@@ -29,17 +29,12 @@
 (require 'cl-lib)
 
 (defmacro hatty-test (&rest body)
-  "Evaluate BODY in a fresh hatty test environment.
-Set up a dedicated frame and a temporary buffer displayed in it."
+  "Evaluate BODY in a fresh hatty test environment."
   (declare (indent 0))
-  `(let ((frame (make-frame)))
-     (unwind-protect
-         (with-temp-buffer
-           (with-selected-frame frame
-             (switch-to-buffer (current-buffer))
-             (redisplay t)
-             ,@body))
-       (delete-frame frame))))
+  `(with-temp-buffer
+     (switch-to-buffer (current-buffer))
+     (redisplay t)
+     ,@body))
 
 (cl-defmacro hatty-test-preserves-pixel-size (&key content setup allocation
                                                    setup-retains-pixel-size)
