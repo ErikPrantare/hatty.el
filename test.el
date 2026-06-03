@@ -29,7 +29,9 @@
 (require 'cl-lib)
 
 (defmacro hatty-test (&rest body)
-  "Evaluate BODY in a fresh hatty test environment."
+  "Evaluate BODY in a fresh hatty test environment.
+
+BODY is evaluated once for each available line spacing methods."
   (declare (indent 0))
   `(with-temp-buffer
      (switch-to-buffer (current-buffer))
@@ -37,7 +39,8 @@
      ,@body))
 
 (cl-defmacro hatty-test-preserves-pixel-size (&key content setup allocation
-                                                   setup-retains-pixel-size)
+                                                   setup-retains-pixel-size
+                                                   (line-height-methods '(line-height svg-prefix)))
   "Verify hat rendering preserves pixel size.
 
 CONTENT is a form producing a string to insert as buffer content.  SETUP
@@ -46,17 +49,20 @@ performs hat allocation.
 
 Checks that SETUP changes pixel size (unless SETUP-RETAINS-PIXEL-SIZE is
 non-nil) and that ALLOCATION does not."
-  `(hatty-test
-     (insert ,content)
-     (redisplay t)
-     (let ((content-size (window-text-pixel-size)))
-       ,setup
-       (redisplay t)
-       (let ((setup-size (window-text-pixel-size)))
-         ,(unless setup-retains-pixel-size
-            '(should-not (equal content-size setup-size)))
-         ,allocation
-         (should (equal setup-size (window-text-pixel-size)))))))
+  `(dolist (method ',line-height-methods)
+     (hatty-test
+       (let ((hatty--preferred-spacing-method method))
+         (insert ,content)
+         (redisplay t)
+         (let ((content-size (window-text-pixel-size)))
+           ,setup
+           (hatty--increase-line-spacing)
+           (redisplay t)
+           (let ((setup-size (window-text-pixel-size)))
+             ,(unless setup-retains-pixel-size
+                '(should-not (equal content-size setup-size)))
+             ,allocation
+             (should (equal setup-size (window-text-pixel-size)))))))))
 
 (defun hatty-test--draw-hat-at (position)
   (hatty--draw-svg-hat
@@ -224,7 +230,9 @@ This is crucial to not reveal characters of password prompts."
                                        'raise -0.3))
    :allocation (progn
                  (hatty-test--draw-hat-at (+ (point-min) 2))
-                 (hatty-test--draw-hat-at (+ (point-min) 4)))))
+                 (hatty-test--draw-hat-at (+ (point-min) 4)))
+   ;; FIXME: Check comment in `hatty--increase-line-spacing'.
+   :line-height-methods (line-height)))
 
 (ert-deftest hatty--raise-display-overlay-property ()
   "The 'raise overlay display property raises hatted characters."

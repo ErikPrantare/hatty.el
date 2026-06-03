@@ -272,7 +272,7 @@ shape will be used.
 
 If there is no token corresponding to CHARACTER, COLOR and SHAPE, this
 function returns nil."
-  (when-let ((hat (hatty--locate-hat character color shape)))
+  (when-let* ((hat (hatty--locate-hat character color shape)))
     (hatty--hat-token-region hat)))
 
 (defun hatty--buffer-hats (&optional buffer-or-name)
@@ -485,6 +485,18 @@ Order tokens by importance."
        (abs (- (point) (car token))))
      #'<)))
 
+(defvar hatty--preferred-spacing-method nil
+  "Preferred spacing method.
+Should be one of `line-height' or `svg-prefix'.")
+
+(defvar-local hatty--current-spacing-method nil
+  "Spacing method used for this buffer.
+Possible values are `line-height' and `svg-prefix'.")
+
+(defvar hatty--svg-prefix-height nil
+  "Size of the svg prefix image.
+Only applicable when `hatty--current-spacing-method' is `svg-prefix'.")
+
 (defun hatty--compute-space-deprivation-truncated (hats)
   "Populate HATS with space deprivation information.
 Assume that long lines are truncated."
@@ -552,10 +564,12 @@ expensive, but is made quicker by computing it in bulk with this
 function."
   ;; The reason that it is expensive is because we need to use visual
   ;; line movements, which are slower than regular movement
-  ;; operations.
-  (if truncate-lines
-      (hatty--compute-space-deprivation-truncated hats)
-    (hatty--compute-space-deprivation-wrapped hats)))
+  ;; operations.  We only need this when line-height is calculated
+  ;; through line-height overlay properties.
+  (when (eq hatty--current-spacing-method 'line-height)
+    (if truncate-lines
+        (hatty--compute-space-deprivation-truncated hats)
+      (hatty--compute-space-deprivation-wrapped hats))))
 
 (defun hatty--create-hats ()
   "Create and return hats in the buffer given by `window-buffer'.
@@ -628,14 +642,16 @@ returns nil."
                             (hatty--get-raise-display-property position))))
 
                  (`(,line-height ,default-char-height)
-                  (save-excursion
-                    (goto-char position)
-                    (skip-chars-forward "^\n" (+ 1000 position))
-                    (if (char-after)
-                        (list (get-char-property (point) 'line-height)
-                              (+ (elt (query-font (font-at (point))) 4)
-                                 (elt (query-font (font-at (point))) 5)))
-                      (list nil char-height))))
+                  (if (eq hatty--current-spacing-method 'line-height)
+                      (save-excursion
+                        (goto-char position)
+                        (skip-chars-forward "^\n" (+ 1000 position))
+                        (if (char-after)
+                            (list (get-char-property (point) 'line-height)
+                                  (+ (elt (query-font (font-at (point))) 4)
+                                     (elt (query-font (font-at (point))) 5)))
+                          (list nil char-height)))
+                    (list nil hatty--svg-prefix-height)))
                  (default-line-height
                   (cond
                    ((hatty--hat-space-deprived-p hat) default-char-height)
@@ -722,7 +738,7 @@ returns nil."
 Because creating the SVG is computationally heavy, the SVG is cached
 in `hatty--svg-cache' to avoid recomputation of visually equivalent
 SVGs in the future."
-  (when-let ((parameters (hatty--svg-parameters hat)))
+  (when-let* ((parameters (hatty--svg-parameters hat)))
     (with-memoization (gethash parameters hatty--svg-cache)
       (hatty--compute-svg parameters))))
 
@@ -741,14 +757,79 @@ SVGs in the future."
     (overlay-put overlay 'hatty--hat-p t)
     (overlay-put overlay 'hatty--hat hat)))
 
+(defun hatty--current-buffer-font ()
+  "Return font for current buffer."
+  (if (and (get-buffer-window) (/= (point-min) (point-max)))
+      (font-at (point-min))
+    (face-attribute 'default :font)))
+
+(defun hatty--desired-line-height ()
+  "Return the minimum desired line height in pixels."
+  (let* ((font (hatty--current-buffer-font))
+         (font-metrics (query-font font))
+         (ascent (elt font-metrics 4))
+         (descent (elt font-metrics 5))
+         (char-height (+ ascent descent))
+         (target-height (ceiling (* char-height 1.2))))
+    target-height))
+
 (defun hatty--increase-line-height ()
+  "Add space between lines through line-height overlays."
+  (let ((modify-line-spacing (make-overlay (point-min) (point-max) nil nil t)))
+    (overlay-put modify-line-spacing 'line-height (hatty--desired-line-height))
+    (overlay-put modify-line-spacing 'evaporate nil)
+    (overlay-put modify-line-spacing 'hatty t)
+    (overlay-put modify-line-spacing 'hatty--modified-spacing t)
+    (overlay-put modify-line-spacing 'hatty--modified-line-height t))
+  (setq hatty--current-spacing-method 'line-height))
+
+(defun hatty--increase-spacing-svg-prefix ()
+  "Add space between lines for hats through svg prefix overlays."
+  (let* ((modify-line-spacing (make-overlay (point-min) (point-max) nil nil t))
+         (font (hatty--current-buffer-font))
+         (descent (elt (query-font font) 5))
+         (target-height (hatty--desired-line-height))
+         (svg-ascent-pct (ceiling (* 100 (- target-height descent))
+                                  target-height))
+         ;; HACK: Images get the same 'raise property as the first
+         ;; visual char when a line-prefix.  We concat image with
+         ;; zero-width space, so neither gets 'raise set.  Does not
+         ;; work for display properties.
+         ;; FIXME: For display properties (upstream bug?)
+         (prefix (concat (propertize
+                          "\N{ZERO WIDTH SPACE}"
+                          'display
+                          (svg-image (svg-create 1 target-height)
+                                     :ascent svg-ascent-pct
+                                     :scale 1.0)
+                          'raise 0)
+                         "\N{ZERO WIDTH SPACE}")))
+    (setq hatty--svg-prefix-height target-height)
+    (overlay-put modify-line-spacing 'line-prefix prefix)
+    (overlay-put modify-line-spacing 'wrap-prefix prefix)
+    (overlay-put modify-line-spacing 'evaporate nil)
+    (overlay-put modify-line-spacing 'hatty t)
+    (overlay-put modify-line-spacing 'hatty--modified-spacing t)
+    (overlay-put modify-line-spacing 'hatty--modified-prefix prefix))
+  (setq hatty--current-spacing-method 'svg-prefix))
+
+(defun hatty--increase-line-spacing ()
   "Add space between lines for hats to render in the current buffer."
-  (remove-overlays nil nil 'hatty--modified-line-height t)
-  (let ((modify-line-height (make-overlay (point-min) (point-max) nil nil t)))
-    (overlay-put modify-line-height 'line-height 1.2)
-    (overlay-put modify-line-height 'evaporate nil)
-    (overlay-put modify-line-height 'hatty t)
-    (overlay-put modify-line-height 'hatty--modified-line-height t)))
+  (cond
+   ((eq hatty--preferred-spacing-method 'line-height)
+    (hatty--increase-line-height))
+   ((eq hatty--preferred-spacing-method 'svg-prefix)
+    (hatty--increase-spacing-svg-prefix))
+   (t
+    (if (or (seq-some (lambda (overlay)
+                        (and (not (overlay-get overlay 'hatty))
+                             (or (overlay-get overlay 'line-prefix)
+                                 (overlay-get overlay 'wrap-prefix))))
+                      (overlays-in (point-min) (point-max)))
+            (text-property-not-all (point-min) (point-max) 'line-prefix nil)
+            (text-property-not-all (point-min) (point-max) 'wrap-prefix nil))
+        (hatty--increase-line-height)
+      (hatty--increase-spacing-svg-prefix)))))
 
 (defun hatty--render-hats (hats)
   "Display HATS."
@@ -808,7 +889,7 @@ The penalty is computed using `hatty--penalty'."
               ;; first causes flickering.
               (hatty--mark-old-overlays)
               (setq hatty--hats (hatty--create-hats))
-              (hatty--increase-line-height)
+              (hatty--increase-line-spacing)
               (hatty--render-hats hatty--hats)
               (hatty--remove-old-overlays)))))
       (redisplay)))
