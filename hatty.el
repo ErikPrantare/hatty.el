@@ -760,7 +760,7 @@ SVGs in the future."
 (defun hatty--current-buffer-font ()
   "Return font for current buffer."
   (if (and (get-buffer-window) (/= (point-min) (point-max)))
-      (font-at (point-min))
+      (font-at (point-min) (get-buffer-window))
     (face-attribute 'default :font)))
 
 (defun hatty--desired-line-height ()
