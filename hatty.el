@@ -818,6 +818,8 @@ SVGs in the future."
 (defun hatty--increase-line-spacing ()
   "Add space between lines for hats to render in the current buffer."
   (cond
+   ;; Bail out if in a terminal
+   ((not window-system) nil)
    ((eq hatty--preferred-spacing-method 'line-height)
     (hatty--increase-line-height))
    ((eq hatty--preferred-spacing-method 'svg-prefix)
