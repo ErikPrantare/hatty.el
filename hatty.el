@@ -945,7 +945,7 @@ To reallocate immediately, use `hatty-reallocate' instead."
   :group 'hatty
   :after-hook
   (if hatty-mode
-      (hatty--increase-line-height)
+      (hatty--increase-line-spacing)
     (hatty--clear)))
 
 ;;;###autoload
