@@ -231,7 +231,7 @@ This is crucial to not reveal characters of password prompts."
    :allocation (progn
                  (hatty-test--draw-hat-at (+ (point-min) 2))
                  (hatty-test--draw-hat-at (+ (point-min) 4)))
-   ;; FIXME: Check comment in `hatty--increase-line-spacing'.
+   ;; FIXME: Make it work for all methods
    :line-height-methods (line-height)))
 
 (ert-deftest hatty--raise-display-overlay-property ()
@@ -247,7 +247,9 @@ This is crucial to not reveal characters of password prompts."
                          'display [(raise -0.3)]))
    :allocation (progn
                  (hatty-test--draw-hat-at (+ (point-min) 2))
-                 (hatty-test--draw-hat-at (+ (point-min) 4)))))
+                 (hatty-test--draw-hat-at (+ (point-min) 4)))
+   ;; FIXME: Make it work for all methods
+   :line-height-methods (line-height)))
 
 (ert-deftest hatty--deleted-buffer-content-line-height ()
   "Deleting buffer contents should preserve line height overlay."
