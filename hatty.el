@@ -758,9 +758,11 @@ SVGs in the future."
     (overlay-put overlay 'hatty--hat hat)))
 
 (defun hatty--current-buffer-font ()
-  "Return font for current buffer."
+  "Return representative font for current buffer."
   (if (and (get-buffer-window) (/= (point-min) (point-max)))
-      (font-at (point-min) (get-buffer-window))
+      ;; Relatively often, the font at (point-min) is a title and thus
+      ;; not representative of the the buffer.
+      (font-at (1- (point-max)) (get-buffer-window))
     (face-attribute 'default :font)))
 
 (defun hatty--desired-line-height ()
