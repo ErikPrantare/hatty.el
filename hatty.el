@@ -385,6 +385,15 @@ Done before hat reallocation is made."
   "Return the character with highest style priority of CHARACTERS."
   (car (seq-sort-by #'hatty--next-style-penalty #'< characters)))
 
+(defcustom hatty-reallocation-priority 'stability
+  "What to prioritize when reallocating hats.
+This can either be the symbol `stability', which will try to reduce the
+amount of jitter between allocations, or the symbol `relevance', which
+will try to always give the best hats to the most relevant tokens."
+  :type '(radio (const :tag "Stability" stability)
+                (const :tag "Relevance" relevance))
+  :group 'hatty)
+
 (defun hatty--create-hat (token)
   "Create a hat for TOKEN.
 Return the hat if successful, otherwise return nil.
@@ -413,7 +422,8 @@ TOKEN is a cons cell of the bounds of the token."
                  (hatty--style-free-p (hatty--hat-character previous-hat)
                                       previous-style)
                  (<= (hatty--penalty previous-style)
-                     (hatty--penalty style))
+                     (+ (hatty--penalty style)
+                        (if (eq hatty-reallocation-priority 'stability) 1 0)))
                  (member (hatty--hat-character previous-hat) characters))
         (setq selected-character (hatty--hat-character previous-hat))
         (setq style previous-style))
