@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2024, 2025, 2026 Erik Präntare
 
-;; Author: Erik Präntare
+;; Author: Erik Präntare <erik@prantare.xyz>
 ;; Keywords: convenience
 ;; Version: 2.0.0
 ;; Homepage: https://github.com/ErikPrantare/hatty.el
