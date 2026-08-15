@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2024, 2025, 2026 Erik Präntare
 
-;; Author: Erik Präntare
+;; Author: Erik Präntare <erik@prantare.xyz>
 ;; Keywords: convenience
 ;; Version: 2.0.0
 ;; Homepage: https://github.com/ErikPrantare/hatty.el
@@ -272,7 +272,7 @@ shape will be used.
 
 If there is no token corresponding to CHARACTER, COLOR and SHAPE, this
 function returns nil."
-  (when-let ((hat (hatty--locate-hat character color shape)))
+  (when-let* ((hat (hatty--locate-hat character color shape)))
     (hatty--hat-token-region hat)))
 
 (defun hatty--buffer-hats (&optional buffer-or-name)
@@ -385,6 +385,15 @@ Done before hat reallocation is made."
   "Return the character with highest style priority of CHARACTERS."
   (car (seq-sort-by #'hatty--next-style-penalty #'< characters)))
 
+(defcustom hatty-reallocation-priority 'stability
+  "What to prioritize when reallocating hats.
+This can either be the symbol `stability', which will try to reduce the
+amount of jitter between allocations, or the symbol `relevance', which
+will try to always give the best hats to the most relevant tokens."
+  :type '(radio (const :tag "Stability" stability)
+                (const :tag "Relevance" relevance))
+  :group 'hatty)
+
 (defun hatty--create-hat (token)
   "Create a hat for TOKEN.
 Return the hat if successful, otherwise return nil.
@@ -413,7 +422,8 @@ TOKEN is a cons cell of the bounds of the token."
                  (hatty--style-free-p (hatty--hat-character previous-hat)
                                       previous-style)
                  (<= (hatty--penalty previous-style)
-                     (hatty--penalty style))
+                     (+ (hatty--penalty style)
+                        (if (eq hatty-reallocation-priority 'stability) 1 0)))
                  (member (hatty--hat-character previous-hat) characters))
         (setq selected-character (hatty--hat-character previous-hat))
         (setq style previous-style))
@@ -485,6 +495,18 @@ Order tokens by importance."
        (abs (- (point) (car token))))
      #'<)))
 
+(defvar hatty--preferred-spacing-method nil
+  "Preferred spacing method.
+Should be one of `line-height' or `svg-prefix'.")
+
+(defvar-local hatty--current-spacing-method nil
+  "Spacing method used for this buffer.
+Possible values are `line-height' and `svg-prefix'.")
+
+(defvar hatty--svg-prefix-height nil
+  "Size of the svg prefix image.
+Only applicable when `hatty--current-spacing-method' is `svg-prefix'.")
+
 (defun hatty--compute-space-deprivation-truncated (hats)
   "Populate HATS with space deprivation information.
 Assume that long lines are truncated."
@@ -552,10 +574,12 @@ expensive, but is made quicker by computing it in bulk with this
 function."
   ;; The reason that it is expensive is because we need to use visual
   ;; line movements, which are slower than regular movement
-  ;; operations.
-  (if truncate-lines
-      (hatty--compute-space-deprivation-truncated hats)
-    (hatty--compute-space-deprivation-wrapped hats)))
+  ;; operations.  We only need this when line-height is calculated
+  ;; through line-height overlay properties.
+  (when (eq hatty--current-spacing-method 'line-height)
+    (if truncate-lines
+        (hatty--compute-space-deprivation-truncated hats)
+      (hatty--compute-space-deprivation-wrapped hats))))
 
 (defun hatty--create-hats ()
   "Create and return hats in the buffer given by `window-buffer'.
@@ -595,67 +619,75 @@ returns nil."
   ;; font-at will return nil.  For now, we just bail out if this
   ;; occurs.  Should probably be done somewhere else...
   (when (font-at (marker-position (hatty--hat-marker hat)))
-    (let* ((position (marker-position (hatty--hat-marker hat)))
-           (text (buffer-substring-no-properties position (1+ position)))
-           ;; I will pretend that get-char-property yields all the faces
-           ;; used in the deduction of the face properties for display.
-           ;; I will also pretend that anything not a face or list of
-           ;; faces does not contribute to the display.  These
-           ;; assumptions might not be true; Consult Properties with
-           ;; Special Meanings in the emacs manual.
-           (faces (append (let ((face-spec (get-char-property position 'face)))
-                            (cond
-                             ((facep face-spec) (list face-spec))
-                             ((consp face-spec)
-                              ;; Only handle named faces for now
-                              (seq-filter #'facep face-spec))
-                             (t '())))
-                          (list 'default)))
-           (font-family (face-attribute (car faces) :family nil (cdr faces)))
-           (font-weight (face-attribute (car faces) :weight nil (cdr faces)))
+    (pcase-let* ((position (marker-position (hatty--hat-marker hat)))
+                 (text (buffer-substring-no-properties position (1+ position)))
+                 ;; I will pretend that get-char-property yields all the faces
+                 ;; used in the deduction of the face properties for display.
+                 ;; I will also pretend that anything not a face or list of
+                 ;; faces does not contribute to the display.  These
+                 ;; assumptions might not be true; Consult Properties with
+                 ;; Special Meanings in the emacs manual.
+                 (faces (append (let ((face-spec (get-char-property position 'face)))
+                                  (cond
+                                   ((facep face-spec) (list face-spec))
+                                   ((consp face-spec)
+                                    ;; Only handle named faces for now
+                                    (seq-filter #'facep face-spec))
+                                   (t '())))
+                                (list 'default)))
+                 (font-family (face-attribute (car faces) :family nil (cdr faces)))
+                 (font-weight (face-attribute (car faces) :weight nil (cdr faces)))
 
-           (font (font-at position))
-           (font-metrics (query-font font))
-           (glyph-metrics (elt (font-get-glyphs font position (1+ position)) 0))
+                 (font (font-at position))
+                 (font-metrics (query-font font))
+                 (glyph-metrics (elt (font-get-glyphs font position (1+ position)) 0))
 
-           (font-size (elt font-metrics 2))
-           (ascent (elt font-metrics 4))
-           (descent (elt font-metrics 5))
-           (char-width (elt glyph-metrics 4))
-           (char-height (+ ascent descent))
-           (raise (round
-                   (* char-height
-                      (hatty--get-raise-display-property position))))
+                 (font-size (elt font-metrics 2))
+                 (ascent (elt font-metrics 4))
+                 (descent (elt font-metrics 5))
+                 (char-width (elt glyph-metrics 4))
+                 (char-height (+ ascent descent))
+                 (raise (truncate
+                         (* char-height
+                            (hatty--get-raise-display-property position))))
 
-           ;; Should probably look at the final newline for this property
-           (line-height (get-char-property position 'line-height))
-           (default-char-height (frame-char-height))
-           (default-line-height
-            (cond
-             ((hatty--hat-space-deprived-p hat) default-char-height)
-             ((integerp line-height) (max default-char-height line-height))
-             ((floatp line-height) (* default-char-height line-height))
-             (t default-char-height)))
+                 (`(,line-height ,default-char-height)
+                  (if (eq hatty--current-spacing-method 'line-height)
+                      (save-excursion
+                        (goto-char position)
+                        (skip-chars-forward "^\n" (+ 1000 position))
+                        (if (char-after)
+                            (list (get-char-property (point) 'line-height)
+                                  (+ (elt (query-font (font-at (point))) 4)
+                                     (elt (query-font (font-at (point))) 5)))
+                          (list nil char-height)))
+                    (list nil hatty--svg-prefix-height)))
+                 (default-line-height
+                  (cond
+                   ((hatty--hat-space-deprived-p hat) default-char-height)
+                   ((integerp line-height) (max default-char-height line-height))
+                   ((floatp line-height) (* default-char-height line-height))
+                   (t default-char-height)))
 
-           (svg-height (max default-line-height char-height))
-           (svg-width char-width)
-           ;; TODO: We should probably calculate the bounding box of
-           ;; the empty space above the typical char, and fit the
-           ;; curve inside that, instead of using this equation
-           ;; derived from trial-and-error.
-           (scale (* hatty-scale-factor
-                     ;; Magic number 200.0 was picked to look good.
-                     (/ (face-attribute 'default :height) 200.0)))
+                 (svg-height (max default-line-height char-height))
+                 (svg-width char-width)
+                 ;; TODO: We should probably calculate the bounding box of
+                 ;; the empty space above the typical char, and fit the
+                 ;; curve inside that, instead of using this equation
+                 ;; derived from trial-and-error.
+                 (scale (* hatty-scale-factor
+                           ;; Magic number 200.0 was picked to look good.
+                           (/ (face-attribute 'default :height) 200.0)))
 
-           ;; Convert from emacs color to 6 letter svg hexcode.
-           (svg-hat-color
-            (let ((color
-                   (color-values
-                    (alist-get (hatty--hat-color hat) hatty-colors))))
-              (format "#%02X%02X%02X"
-                      (/ (nth 0 color) 256)
-                      (/ (nth 1 color) 256)
-                      (/ (nth 2 color) 256)))))
+                 ;; Convert from emacs color to 6 letter svg hexcode.
+                 (svg-hat-color
+                  (let ((color
+                         (color-values
+                          (alist-get (hatty--hat-color hat) hatty-colors))))
+                    (format "#%02X%02X%02X"
+                            (/ (nth 0 color) 256)
+                            (/ (nth 1 color) 256)
+                            (/ (nth 2 color) 256)))))
 
       (list
        :svg-hat-color svg-hat-color
@@ -686,15 +718,14 @@ returns nil."
          (scale (plist-get parameters :scale))
          (svg (svg-create svg-width svg-height)))
 
-    ;; Emacs 31: Default fill no longer :foreground.  Inspect NEWS for
-    ;; how to use correct color.
     (svg-text svg text
               :stroke-width 0
               :font-family font-family
               :font-size font-size
               :font-weight font-weight
               :x 0
-              :y (- svg-height descent))
+              :y (- svg-height descent)
+              :fill "currentcolor")
 
     (svg-node svg 'path
               ;; Transformations are applied right-to-left
@@ -717,7 +748,7 @@ returns nil."
 Because creating the SVG is computationally heavy, the SVG is cached
 in `hatty--svg-cache' to avoid recomputation of visually equivalent
 SVGs in the future."
-  (when-let ((parameters (hatty--svg-parameters hat)))
+  (when-let* ((parameters (hatty--svg-parameters hat)))
     (with-memoization (gethash parameters hatty--svg-cache)
       (hatty--compute-svg parameters))))
 
@@ -736,14 +767,83 @@ SVGs in the future."
     (overlay-put overlay 'hatty--hat-p t)
     (overlay-put overlay 'hatty--hat hat)))
 
+(defun hatty--current-buffer-font ()
+  "Return representative font for current buffer."
+  (if (and (get-buffer-window) (/= (point-min) (point-max)))
+      ;; Relatively often, the font at (point-min) is a title and thus
+      ;; not representative of the the buffer.
+      (font-at (1- (point-max)) (get-buffer-window))
+    (face-attribute 'default :font)))
+
+(defun hatty--desired-line-height ()
+  "Return the minimum desired line height in pixels."
+  (let* ((font (hatty--current-buffer-font))
+         (font-metrics (query-font font))
+         (ascent (elt font-metrics 4))
+         (descent (elt font-metrics 5))
+         (char-height (+ ascent descent))
+         (target-height (ceiling (* char-height 1.2))))
+    target-height))
+
 (defun hatty--increase-line-height ()
+  "Add space between lines through line-height overlays."
+  (let ((modify-line-spacing (make-overlay (point-min) (point-max) nil nil t)))
+    (overlay-put modify-line-spacing 'line-height (hatty--desired-line-height))
+    (overlay-put modify-line-spacing 'evaporate nil)
+    (overlay-put modify-line-spacing 'hatty t)
+    (overlay-put modify-line-spacing 'hatty--modified-spacing t)
+    (overlay-put modify-line-spacing 'hatty--modified-line-height t))
+  (setq hatty--current-spacing-method 'line-height))
+
+(defun hatty--increase-spacing-svg-prefix ()
+  "Add space between lines for hats through svg prefix overlays."
+  (let* ((modify-line-spacing (make-overlay (point-min) (point-max) nil nil t))
+         (font (hatty--current-buffer-font))
+         (descent (elt (query-font font) 5))
+         (target-height (hatty--desired-line-height))
+         (svg-ascent-pct (ceiling (* 100 (- target-height descent))
+                                  target-height))
+         ;; HACK: Images get the same 'raise property as the first
+         ;; visual char when a line-prefix.  We concat image with
+         ;; zero-width space, so neither gets 'raise set.  Does not
+         ;; work for display properties.
+         ;; FIXME: For display properties (upstream bug?)
+         (prefix (concat (propertize
+                          "\N{ZERO WIDTH SPACE}"
+                          'display
+                          (svg-image (svg-create 1 target-height)
+                                     :ascent svg-ascent-pct
+                                     :scale 1.0)
+                          'raise 0)
+                         "\N{ZERO WIDTH SPACE}")))
+    (setq hatty--svg-prefix-height target-height)
+    (overlay-put modify-line-spacing 'line-prefix prefix)
+    (overlay-put modify-line-spacing 'wrap-prefix prefix)
+    (overlay-put modify-line-spacing 'evaporate nil)
+    (overlay-put modify-line-spacing 'hatty t)
+    (overlay-put modify-line-spacing 'hatty--modified-spacing t)
+    (overlay-put modify-line-spacing 'hatty--modified-prefix prefix))
+  (setq hatty--current-spacing-method 'svg-prefix))
+
+(defun hatty--increase-line-spacing ()
   "Add space between lines for hats to render in the current buffer."
-  (remove-overlays nil nil 'hatty--modified-line-height t)
-  (let ((modify-line-height (make-overlay (point-min) (point-max) nil nil t)))
-    (overlay-put modify-line-height 'line-height 1.2)
-    (overlay-put modify-line-height 'evaporate nil)
-    (overlay-put modify-line-height 'hatty t)
-    (overlay-put modify-line-height 'hatty--modified-line-height t)))
+  (cond
+   ;; Bail out if in a terminal
+   ((not window-system) nil)
+   ((eq hatty--preferred-spacing-method 'line-height)
+    (hatty--increase-line-height))
+   ((eq hatty--preferred-spacing-method 'svg-prefix)
+    (hatty--increase-spacing-svg-prefix))
+   (t
+    (if (or (seq-some (lambda (overlay)
+                        (and (not (overlay-get overlay 'hatty))
+                             (or (overlay-get overlay 'line-prefix)
+                                 (overlay-get overlay 'wrap-prefix))))
+                      (overlays-in (point-min) (point-max)))
+            (text-property-not-all (point-min) (point-max) 'line-prefix nil)
+            (text-property-not-all (point-min) (point-max) 'wrap-prefix nil))
+        (hatty--increase-line-height)
+      (hatty--increase-spacing-svg-prefix)))))
 
 (defun hatty--render-hats (hats)
   "Display HATS."
@@ -803,7 +903,7 @@ The penalty is computed using `hatty--penalty'."
               ;; first causes flickering.
               (hatty--mark-old-overlays)
               (setq hatty--hats (hatty--create-hats))
-              (hatty--increase-line-height)
+              (hatty--increase-line-spacing)
               (hatty--render-hats hatty--hats)
               (hatty--remove-old-overlays)))))
       (redisplay)))
@@ -859,7 +959,7 @@ To reallocate immediately, use `hatty-reallocate' instead."
   :group 'hatty
   :after-hook
   (if hatty-mode
-      (hatty--increase-line-height)
+      (hatty--increase-line-spacing)
     (hatty--clear)))
 
 ;;;###autoload
