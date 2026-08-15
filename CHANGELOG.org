@@ -1,4 +1,4 @@
-* NEXT
+* 2.1.0 [2026-08-15 Sat]
 - Reduced jitter between hat allocations.  Old behavior can be
   regained by customizing ~hatty-reallocation-priority~.
 - Improved method for adding space for hats.  Now it can add space in
