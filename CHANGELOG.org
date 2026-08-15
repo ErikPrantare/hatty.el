@@ -1,6 +1,8 @@
 * NEXT
 - Reduced jitter between hat allocations.  Old behavior can be
   regained by customizing ~hatty-reallocation-priority~.
+- Improved method for adding space for hats.  Now it can add space in
+  more situations.
 
 * 2.0.0 [2026-04-20 Mon]
 - New user option ~hatty-scale-factor~.  This option will scale the
