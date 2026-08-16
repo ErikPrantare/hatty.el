@@ -27,7 +27,7 @@
 
 ;; This package provides functionality for drawing and locating
 ;; "hats", small colored symbols used for indexing the text in the
-;; visible portion of the buffer in the current window.
+;; visible parts of a buffer.
 
 ;; Setup: Call ‘global-hatty-mode’ to start displaying hats.  The
 ;; token of a hat may then be queried using the function
@@ -255,11 +255,11 @@ The behavior of this function can be changed by setting
                                (eq (hatty--normalize-character character)
                                    (hatty--hat-character hat))
                                (eq shape (hatty--hat-shape hat))))
-            (apply #'append
-                   (mapcar (lambda (window)
-                             (with-current-buffer (window-buffer window)
-                               hatty--hats))
-                           (window-list-1 nil nil 'visible)))))
+            (seq-mapcat (lambda (buffer)
+                          (with-current-buffer buffer
+                            hatty--hats))
+                        (delete-dups (mapcar #'window-buffer
+                                             (window-list-1 nil nil 'visible))))))
 
 (defun hatty-locate-token (character &optional color shape)
   "Get token region of the hat over CHARACTER with COLOR and SHAPE.
@@ -480,12 +480,47 @@ single tokens."
         (push token tokens)))
     tokens))
 
+(defun hatty--get-visible-regions (buffer)
+  "Return visible regions of BUFFER.
+
+This returns a list of regions over all the parts of BUFFER that are
+currently visible in some window.  The regions are disjoint and ordered
+by which region comes first in the buffer."
+  (let* ((windows (get-buffer-window-list buffer nil 'visible))
+         (regions
+          ;; Emacs 30: use (sort seq :key #'car :in-place t)
+          (seq-sort-by
+           #'car #'<
+           (mapcar (lambda (window)
+                     (cons (window-start window)
+                           ;; Only if there is no end calculated at
+                           ;; all do we want to force an update,
+                           ;; otherwise it is okay to get imprecise
+                           ;; results.
+                           (or (window-end window)
+                               (window-end window t))))
+                   windows)))
+         merged-regions
+         previous-region)
+    (when regions
+      (setq previous-region (pop regions))
+      (dolist (region regions)
+        (if (<= (car region) (cdr previous-region))
+            (setf (cdr previous-region)
+                  (max (cdr previous-region) (cdr region)))
+          (push previous-region merged-regions)
+          (setq previous-region region)))
+      (push previous-region merged-regions)
+      (nreverse merged-regions))))
+
 (defun hatty--get-tokens ()
-  "Return bounds of tokens in the visible buffer.
+  "Return bounds of tokens in the visible portions of the current buffer.
 Order tokens by importance."
   (thread-last
-    (funcall hatty--tokenize-region-function
-             (window-start) (window-end))
+    (mapcan (lambda (region)
+              (funcall hatty--tokenize-region-function
+                       (car region) (cdr region)))
+            (hatty--get-visible-regions (current-buffer)))
     (seq-filter
      (lambda (token)
        (not (or (invisible-p (car token))

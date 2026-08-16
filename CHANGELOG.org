@@ -1,3 +1,8 @@
+* NEXT
+- Previously, if a buffer was displayed in multiple windows, hatty
+  only rendered hats for one of the windows.  Now, hatty renders hats
+  in all windows displaying a buffer.
+
 * 2.1.0 [2026-08-15 Sat]
 - Reduced jitter between hat allocations.  Old behavior can be
   regained by customizing ~hatty-reallocation-priority~.
