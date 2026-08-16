@@ -162,7 +162,9 @@ will double hat sizes, while a factor of 0.5 will halve them."
     (green . 1))
   "Penalty for using a specific color.
 
-Used in `hatty--penalty' to calculate the penalty for given style."
+Hatty will try to minimize the penalty for the styles of the hats it
+allocates.  Styles with low penalties are prioritized for the parts of
+the buffer close to point."
   :type '(alist :key-type symbol :value-type number)
   :group 'hatty)
 
@@ -180,7 +182,9 @@ Used in `hatty--penalty' to calculate the penalty for given style."
     (eye . 1))
   "Penalty for using a specific shape.
 
-Used in `hatty--penalty' to calculate the penalty for given style."
+Hatty will try to minimize the penalty for the styles of the hats it
+allocates.  Styles with low penalties are prioritized for the parts of
+the buffer close to point."
   :type '(alist :key-type symbol :value-type number)
   :group 'hatty)
 
