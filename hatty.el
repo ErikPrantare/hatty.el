@@ -861,7 +861,12 @@ SVGs in the future."
     (overlay-put modify-line-spacing 'evaporate nil)
     (overlay-put modify-line-spacing 'hatty t)
     (overlay-put modify-line-spacing 'hatty--modified-spacing t)
-    (overlay-put modify-line-spacing 'hatty--modified-prefix prefix))
+    (overlay-put modify-line-spacing 'hatty--modified-prefix prefix)
+    ;; For overriding line/wrap-prefix of other packages.  This only
+    ;; applies when the user forces the svg-prefix method.  Otherwise,
+    ;; the svg-prefix method is only used if no other package sets the
+    ;; prefix properties anywhere in the buffer.
+    (overlay-put modify-line-spacing 'priority 1))
   (setq hatty--current-spacing-method 'svg-prefix))
 
 (defun hatty--increase-line-spacing ()
