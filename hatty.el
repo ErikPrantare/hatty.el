@@ -933,24 +933,38 @@ The penalty is computed using `hatty--penalty'."
   "Reallocate hats."
   (interactive)
   (hatty--reset-styles)
-  (while-no-input ; This computation is heavy and gets invoked often.  Do not block input.
-    (redisplay)
-    (let ((gc-cons-threshold most-positive-fixnum) ; Wait with gc until we have redisplayed.
-          (visited-buffers '())) ; Avoid reallocating same buffer in different windows.
-      (dolist (window (window-list-1 nil nil 'visible))
-        (with-current-buffer (window-buffer window)
-          (when (and hatty-mode (not (member (current-buffer) visited-buffers)))
-            (push (current-buffer) visited-buffers)
-            (with-selected-window window
-              ;; We wait with removing previous overlays: If the
-              ;; computation gets interrupted by input, removing them
-              ;; first causes flickering.
-              (hatty--mark-old-overlays)
-              (setq hatty--hats (hatty--create-hats))
-              (hatty--increase-line-spacing)
-              (hatty--render-hats hatty--hats)
-              (hatty--remove-old-overlays)))))
-      (redisplay)))
+  ;; We manually restore selected window because with-selected-window
+  ;; uses unwind-protect to restore window state.  According to Emacs
+  ;; 31 manual §11.7.5, "Only BODY-FORM is protected by the
+  ;; ‘unwind-protect’".  So, if while-no-input throws inside the
+  ;; cleanup form for with-selected-window, the window may never get
+  ;; restored.  with-current-buffer does not suffer this defect, as it
+  ;; uses the save-current-buffer C function that cannot be
+  ;; interrupted during cleanup.
+
+  ;; TODO: Pass around the window as an explicit parameter instead of
+  ;; setting it as selected.  Perhaps file a report for the above as
+  ;; well.
+  (let ((original-window (selected-window)))
+    (while-no-input ; This computation is heavy and gets invoked often.  Do not block input.
+      (redisplay)
+      (let ((gc-cons-threshold most-positive-fixnum) ; Wait with gc until we have redisplayed.
+            (visited-buffers '())) ; Avoid reallocating same buffer in different windows.
+        (dolist (window (window-list-1 nil nil 'visible))
+          (with-current-buffer (window-buffer window)
+            (when (and hatty-mode (not (member (current-buffer) visited-buffers)))
+              (push (current-buffer) visited-buffers)
+              (with-selected-window window
+                ;; We wait with removing previous overlays: If the
+                ;; computation gets interrupted by input, removing them
+                ;; first causes flickering.
+                (hatty--mark-old-overlays)
+                (setq hatty--hats (hatty--create-hats))
+                (hatty--increase-line-spacing)
+                (hatty--render-hats hatty--hats)
+                (hatty--remove-old-overlays)))))
+        (redisplay)))
+    (select-window original-window t))
   (when (> (hash-table-count hatty--svg-cache) 10000)
     (clrhash hatty--svg-cache)))
 
