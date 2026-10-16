@@ -1,4 +1,7 @@
 * NEXT
+- ~hatty-colors~ can now take faces.  Hat colors specified by faces
+  are determined by the face's foreground color.  The default palette
+  is defined through new ~hatty-color-*~ faces.
 - Previously, if a buffer was displayed in multiple windows, hatty
   only rendered hats for one of the windows.  Now, hatty renders hats
   in all windows displaying a buffer.

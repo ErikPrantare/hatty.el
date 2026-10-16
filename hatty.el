@@ -37,7 +37,6 @@
 
 (require 'subr-x)
 (require 'svg)  ; Hat rendering
-(require 'term) ; Default colors
 
 (defgroup hatty nil
   "Index buffer locations through character hats."
@@ -45,41 +44,57 @@
   :prefix "hatty-"
   :link '(emacs-commentary-link :tag "Commentary" "hatty.el"))
 
+(defface hatty-color-default
+  '((default :foreground "white")
+    (((background light)) :foreground "black"))
+  "Default hatty hat color."
+  :group 'hatty)
+
+(defface hatty-color-yellow
+  '((default :foreground "yellow3")
+    (((background light)) :foreground "yellow3"))
+  "Yellow hatty hat color."
+  :group 'hatty)
+
+(defface hatty-color-red
+  '((default :foreground "red3"))
+  "Red hatty hat color."
+  :group 'hatty)
+
+(defface hatty-color-blue
+  '((default :foreground "RoyalBlue")
+    (((background light)) :foreground "RoyalBlue"))
+  "Blue hatty hat color."
+  :group 'hatty)
+
+(defface hatty-color-pink
+  '((default :foreground "HotPink")
+    (((background light)) :foreground "pink2"))
+  "Pink hatty hat color."
+  :group 'hatty)
+
+(defface hatty-color-green
+  '((default :foreground "green3"))
+  "Green hatty hat color."
+  :group 'hatty)
+
 (defcustom hatty-colors
-  (let ((default-colors
-         `((default . ,(face-attribute 'term :foreground nil t))
-           (yellow . ,(face-attribute 'term-color-yellow :foreground nil t))
-           (red . ,(face-attribute 'term-color-red :foreground nil t))
-           (blue . ,(face-attribute 'term-color-blue :foreground nil t))
-           (pink . ,(face-attribute 'term-color-magenta :foreground nil t))
-           (green . ,(face-attribute 'term-color-green :foreground nil t)))))
+  '((default . hatty-color-default)
+    (yellow . hatty-color-yellow)
+    (red . hatty-color-red)
+    (blue . hatty-color-blue)
+    (pink . hatty-color-pink)
+    (green . hatty-color-green))
+  "Alist mapping color identifiers to their color.
 
-    (if (fboundp 'modus-themes-color) ; Guard to make byte compiler happy
-        (cond
-         ((memq 'modus-vivendi custom-enabled-themes)
-          `((default . ,(modus-themes-color 'fg-dim))
-            (yellow . ,(modus-themes-color 'yellow-graph-0-bg))
-            (red . ,(modus-themes-color 'red-intense))
-            (blue .  ,(modus-themes-color 'blue-graph-0-bg))
-            (pink . ,(modus-themes-color 'magenta-graph-0-bg))
-            (green . ,(modus-themes-color 'green))))
+Identifiers must be symbols.  The identifier symbol `default'
+indicates the default color.
 
-         ;; No yellow here, as it is not very visible.
-         ((memq 'modus-operandi custom-enabled-themes)
-          `((default . ,(modus-themes-color 'fg-main))
-            (red . ,(modus-themes-color 'red-intense))
-            (blue .  ,(modus-themes-color 'blue-intense-bg))
-            (pink . ,(modus-themes-color 'magenta-graph-0-bg))
-            (green . ,(modus-themes-color 'green-graph-0-bg))))
-
-         (t default-colors))
-      default-colors))
-  "Alist of colors used in rendering hats, indexed by identifier.
-
-Identifiers must to be symbols.
-
-The identifier symbol `default' indicates the default color."
-  :type '(alist :key-type symbol :value-type color)
+The color can either be a symbol or a string.  If it is a symbol it
+names a face whose foreground color is used as the color.  If it is a
+string it should be a color, either as an RGB triplet of the form
+\"#xxxxxx\" or one of the named colors in `read-color'."
+  :type '(alist :key-type symbol :value-type (choice face color))
   :group 'hatty)
 
 ;; TODO: Use proper svgs here?
@@ -644,6 +659,16 @@ properties."
            (if property (cadr property) 0.0)))
         (_ 0.0)))))
 
+(defun hatty--resolve-hat-color (hat)
+  "Resolve the color for HAT.
+
+This looks up the color in `hatty-colors' and returns the color as a
+string."
+  (let ((color (alist-get (hatty--hat-color hat) hatty-colors)))
+    (if (symbolp color)
+        (face-attribute color :foreground nil t)
+      color)))
+
 (defvar hatty--svg-cache
   (make-hash-table
    :test 'equal))
@@ -722,7 +747,7 @@ returns nil."
                  (svg-hat-color
                   (let ((color
                          (color-values
-                          (alist-get (hatty--hat-color hat) hatty-colors))))
+                          (hatty--resolve-hat-color hat))))
                     (format "#%02X%02X%02X"
                             (/ (nth 0 color) 256)
                             (/ (nth 1 color) 256)
