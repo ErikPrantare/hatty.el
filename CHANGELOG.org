@@ -1,4 +1,4 @@
-* NEXT
+* 2.2.0 [2026-10-18 Sun]
 - ~hatty-colors~ can now take faces.  Hat colors specified by faces
   are determined by the face's foreground color.  The default palette
   is defined through new ~hatty-color-*~ faces.
