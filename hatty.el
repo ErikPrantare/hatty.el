@@ -4,7 +4,7 @@
 
 ;; Author: Erik Präntare <erik@prantare.xyz>
 ;; Keywords: convenience
-;; Version: 2.0.0
+;; Version: 2.2.0
 ;; Homepage: https://github.com/ErikPrantare/hatty.el
 ;; Package-Requires: ((emacs "29.1"))
 ;; Created: 05 Jul 2024
@@ -27,7 +27,7 @@
 
 ;; This package provides functionality for drawing and locating
 ;; "hats", small colored symbols used for indexing the text in the
-;; visible portion of the buffer in the current window.
+;; visible parts of a buffer.
 
 ;; Setup: Call ‘global-hatty-mode’ to start displaying hats.  The
 ;; token of a hat may then be queried using the function
@@ -37,7 +37,6 @@
 
 (require 'subr-x)
 (require 'svg)  ; Hat rendering
-(require 'term) ; Default colors
 
 (defgroup hatty nil
   "Index buffer locations through character hats."
@@ -45,41 +44,57 @@
   :prefix "hatty-"
   :link '(emacs-commentary-link :tag "Commentary" "hatty.el"))
 
+(defface hatty-color-default
+  '((default :foreground "white")
+    (((background light)) :foreground "black"))
+  "Default hatty hat color."
+  :group 'hatty)
+
+(defface hatty-color-yellow
+  '((default :foreground "yellow3")
+    (((background light)) :foreground "yellow3"))
+  "Yellow hatty hat color."
+  :group 'hatty)
+
+(defface hatty-color-red
+  '((default :foreground "red3"))
+  "Red hatty hat color."
+  :group 'hatty)
+
+(defface hatty-color-blue
+  '((default :foreground "RoyalBlue")
+    (((background light)) :foreground "RoyalBlue"))
+  "Blue hatty hat color."
+  :group 'hatty)
+
+(defface hatty-color-pink
+  '((default :foreground "HotPink")
+    (((background light)) :foreground "pink2"))
+  "Pink hatty hat color."
+  :group 'hatty)
+
+(defface hatty-color-green
+  '((default :foreground "green3"))
+  "Green hatty hat color."
+  :group 'hatty)
+
 (defcustom hatty-colors
-  (let ((default-colors
-         `((default . ,(face-attribute 'term :foreground nil t))
-           (yellow . ,(face-attribute 'term-color-yellow :foreground nil t))
-           (red . ,(face-attribute 'term-color-red :foreground nil t))
-           (blue . ,(face-attribute 'term-color-blue :foreground nil t))
-           (pink . ,(face-attribute 'term-color-magenta :foreground nil t))
-           (green . ,(face-attribute 'term-color-green :foreground nil t)))))
+  '((default . hatty-color-default)
+    (yellow . hatty-color-yellow)
+    (red . hatty-color-red)
+    (blue . hatty-color-blue)
+    (pink . hatty-color-pink)
+    (green . hatty-color-green))
+  "Alist mapping color identifiers to their color.
 
-    (if (fboundp 'modus-themes-color) ; Guard to make byte compiler happy
-        (cond
-         ((memq 'modus-vivendi custom-enabled-themes)
-          `((default . ,(modus-themes-color 'fg-dim))
-            (yellow . ,(modus-themes-color 'yellow-graph-0-bg))
-            (red . ,(modus-themes-color 'red-intense))
-            (blue .  ,(modus-themes-color 'blue-graph-0-bg))
-            (pink . ,(modus-themes-color 'magenta-graph-0-bg))
-            (green . ,(modus-themes-color 'green))))
+Identifiers must be symbols.  The identifier symbol `default'
+indicates the default color.
 
-         ;; No yellow here, as it is not very visible.
-         ((memq 'modus-operandi custom-enabled-themes)
-          `((default . ,(modus-themes-color 'fg-main))
-            (red . ,(modus-themes-color 'red-intense))
-            (blue .  ,(modus-themes-color 'blue-intense-bg))
-            (pink . ,(modus-themes-color 'magenta-graph-0-bg))
-            (green . ,(modus-themes-color 'green-graph-0-bg))))
-
-         (t default-colors))
-      default-colors))
-  "Alist of colors used in rendering hats, indexed by identifier.
-
-Identifiers must to be symbols.
-
-The identifier symbol `default' indicates the default color."
-  :type '(alist :key-type symbol :value-type color)
+The color can either be a symbol or a string.  If it is a symbol it
+names a face whose foreground color is used as the color.  If it is a
+string it should be a color, either as an RGB triplet of the form
+\"#xxxxxx\" or one of the named colors in `read-color'."
+  :type '(alist :key-type symbol :value-type (choice face color))
   :group 'hatty)
 
 ;; TODO: Use proper svgs here?
@@ -162,7 +177,9 @@ will double hat sizes, while a factor of 0.5 will halve them."
     (green . 1))
   "Penalty for using a specific color.
 
-Used in `hatty--penalty' to calculate the penalty for given style."
+Hatty will try to minimize the penalty for the styles of the hats it
+allocates.  Styles with low penalties are prioritized for the parts of
+the buffer close to point."
   :type '(alist :key-type symbol :value-type number)
   :group 'hatty)
 
@@ -180,7 +197,9 @@ Used in `hatty--penalty' to calculate the penalty for given style."
     (eye . 1))
   "Penalty for using a specific shape.
 
-Used in `hatty--penalty' to calculate the penalty for given style."
+Hatty will try to minimize the penalty for the styles of the hats it
+allocates.  Styles with low penalties are prioritized for the parts of
+the buffer close to point."
   :type '(alist :key-type symbol :value-type number)
   :group 'hatty)
 
@@ -255,11 +274,11 @@ The behavior of this function can be changed by setting
                                (eq (hatty--normalize-character character)
                                    (hatty--hat-character hat))
                                (eq shape (hatty--hat-shape hat))))
-            (apply #'append
-                   (mapcar (lambda (window)
-                             (with-current-buffer (window-buffer window)
-                               hatty--hats))
-                           (window-list-1 nil nil 'visible)))))
+            (seq-mapcat (lambda (buffer)
+                          (with-current-buffer buffer
+                            hatty--hats))
+                        (delete-dups (mapcar #'window-buffer
+                                             (window-list-1 nil nil 'visible))))))
 
 (defun hatty-locate-token (character &optional color shape)
   "Get token region of the hat over CHARACTER with COLOR and SHAPE.
@@ -480,12 +499,47 @@ single tokens."
         (push token tokens)))
     tokens))
 
+(defun hatty--get-visible-regions (buffer)
+  "Return visible regions of BUFFER.
+
+This returns a list of regions over all the parts of BUFFER that are
+currently visible in some window.  The regions are disjoint and ordered
+by which region comes first in the buffer."
+  (let* ((windows (get-buffer-window-list buffer nil 'visible))
+         (regions
+          ;; Emacs 30: use (sort seq :key #'car :in-place t)
+          (seq-sort-by
+           #'car #'<
+           (mapcar (lambda (window)
+                     (cons (window-start window)
+                           ;; Only if there is no end calculated at
+                           ;; all do we want to force an update,
+                           ;; otherwise it is okay to get imprecise
+                           ;; results.
+                           (or (window-end window)
+                               (window-end window t))))
+                   windows)))
+         merged-regions
+         previous-region)
+    (when regions
+      (setq previous-region (pop regions))
+      (dolist (region regions)
+        (if (<= (car region) (cdr previous-region))
+            (setf (cdr previous-region)
+                  (max (cdr previous-region) (cdr region)))
+          (push previous-region merged-regions)
+          (setq previous-region region)))
+      (push previous-region merged-regions)
+      (nreverse merged-regions))))
+
 (defun hatty--get-tokens ()
-  "Return bounds of tokens in the visible buffer.
+  "Return bounds of tokens in the visible portions of the current buffer.
 Order tokens by importance."
   (thread-last
-    (funcall hatty--tokenize-region-function
-             (window-start) (window-end))
+    (mapcan (lambda (region)
+              (funcall hatty--tokenize-region-function
+                       (car region) (cdr region)))
+            (hatty--get-visible-regions (current-buffer)))
     (seq-filter
      (lambda (token)
        (not (or (invisible-p (car token))
@@ -605,6 +659,16 @@ properties."
            (if property (cadr property) 0.0)))
         (_ 0.0)))))
 
+(defun hatty--resolve-hat-color (hat)
+  "Resolve the color for HAT.
+
+This looks up the color in `hatty-colors' and returns the color as a
+string."
+  (let ((color (alist-get (hatty--hat-color hat) hatty-colors)))
+    (if (symbolp color)
+        (face-attribute color :foreground nil t)
+      color)))
+
 (defvar hatty--svg-cache
   (make-hash-table
    :test 'equal))
@@ -676,14 +740,32 @@ returns nil."
                  ;; curve inside that, instead of using this equation
                  ;; derived from trial-and-error.
                  (scale (* hatty-scale-factor
-                           ;; Magic number 200.0 was picked to look good.
-                           (/ (face-attribute 'default :height) 200.0)))
+                           (let ((remap (append
+                                         (alist-get 'default face-remapping-alist)
+                                         (list 'default)))
+                                 (height 1.0)
+                                 current-face current-height)
+                             (while (and remap (not (integerp height)))
+                               (setq current-face (pop remap))
+                               (setq current-height
+                                     (cond
+                                      ((consp current-face)
+                                       (plist-get current-face :height))
+                                      ((facep current-face)
+                                       (face-attribute current-face :height nil t))
+                                      (t (ignore))))
+                               (when (numberp current-height)
+                                 (setq height (* height current-height)))
+                               (when (integerp current-height)
+                                 (setq height (floor height))))
+                             ;; Magic number 200.0 was picked to look good.
+                             (/ height 200.0))))
 
                  ;; Convert from emacs color to 6 letter svg hexcode.
                  (svg-hat-color
                   (let ((color
                          (color-values
-                          (alist-get (hatty--hat-color hat) hatty-colors))))
+                          (hatty--resolve-hat-color hat))))
                     (format "#%02X%02X%02X"
                             (/ (nth 0 color) 256)
                             (/ (nth 1 color) 256)
@@ -822,7 +904,12 @@ SVGs in the future."
     (overlay-put modify-line-spacing 'evaporate nil)
     (overlay-put modify-line-spacing 'hatty t)
     (overlay-put modify-line-spacing 'hatty--modified-spacing t)
-    (overlay-put modify-line-spacing 'hatty--modified-prefix prefix))
+    (overlay-put modify-line-spacing 'hatty--modified-prefix prefix)
+    ;; For overriding line/wrap-prefix of other packages.  This only
+    ;; applies when the user forces the svg-prefix method.  Otherwise,
+    ;; the svg-prefix method is only used if no other package sets the
+    ;; prefix properties anywhere in the buffer.
+    (overlay-put modify-line-spacing 'priority 1))
   (setq hatty--current-spacing-method 'svg-prefix))
 
 (defun hatty--increase-line-spacing ()
@@ -889,24 +976,38 @@ The penalty is computed using `hatty--penalty'."
   "Reallocate hats."
   (interactive)
   (hatty--reset-styles)
-  (while-no-input ; This computation is heavy and gets invoked often.  Do not block input.
-    (redisplay)
-    (let ((gc-cons-threshold most-positive-fixnum) ; Wait with gc until we have redisplayed.
-          (visited-buffers '())) ; Avoid reallocating same buffer in different windows.
-      (dolist (window (window-list-1 nil nil 'visible))
-        (with-current-buffer (window-buffer window)
-          (when (and hatty-mode (not (member (current-buffer) visited-buffers)))
-            (push (current-buffer) visited-buffers)
-            (with-selected-window window
-              ;; We wait with removing previous overlays: If the
-              ;; computation gets interrupted by input, removing them
-              ;; first causes flickering.
-              (hatty--mark-old-overlays)
-              (setq hatty--hats (hatty--create-hats))
-              (hatty--increase-line-spacing)
-              (hatty--render-hats hatty--hats)
-              (hatty--remove-old-overlays)))))
-      (redisplay)))
+  ;; We manually restore selected window because with-selected-window
+  ;; uses unwind-protect to restore window state.  According to Emacs
+  ;; 31 manual §11.7.5, "Only BODY-FORM is protected by the
+  ;; ‘unwind-protect’".  So, if while-no-input throws inside the
+  ;; cleanup form for with-selected-window, the window may never get
+  ;; restored.  with-current-buffer does not suffer this defect, as it
+  ;; uses the save-current-buffer C function that cannot be
+  ;; interrupted during cleanup.
+
+  ;; TODO: Pass around the window as an explicit parameter instead of
+  ;; setting it as selected.  Perhaps file a report for the above as
+  ;; well.
+  (let ((original-window (selected-window)))
+    (while-no-input ; This computation is heavy and gets invoked often.  Do not block input.
+      (redisplay)
+      (let ((gc-cons-threshold most-positive-fixnum) ; Wait with gc until we have redisplayed.
+            (visited-buffers '())) ; Avoid reallocating same buffer in different windows.
+        (dolist (window (window-list-1 nil nil 'visible))
+          (with-current-buffer (window-buffer window)
+            (when (and hatty-mode (not (member (current-buffer) visited-buffers)))
+              (push (current-buffer) visited-buffers)
+              (with-selected-window window
+                ;; We wait with removing previous overlays: If the
+                ;; computation gets interrupted by input, removing them
+                ;; first causes flickering.
+                (hatty--mark-old-overlays)
+                (setq hatty--hats (hatty--create-hats))
+                (hatty--increase-line-spacing)
+                (hatty--render-hats hatty--hats)
+                (hatty--remove-old-overlays)))))
+        (redisplay)))
+    (select-window original-window t))
   (when (> (hash-table-count hatty--svg-cache) 10000)
     (clrhash hatty--svg-cache)))
 

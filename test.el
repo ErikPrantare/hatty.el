@@ -87,6 +87,17 @@ non-nil) and that ALLOCATION does not."
            :allocation (hatty-test--draw-hat-at (point-min)))
         (set-face-attribute 'default nil :height previous-height)))))
 
+(ert-deftest hatty--text-scale-adjust ()
+  "Size of the character is retained after `text-scale-adjust'."
+  (hatty-test-preserves-pixel-size
+   :content "a b c d e"
+   :setup (text-scale-adjust 5)
+   :allocation (hatty-test--draw-hat-at (point-min)))
+  (hatty-test-preserves-pixel-size
+   :content "a b c d e"
+   :setup (text-scale-adjust -5)
+   :allocation (hatty-test--draw-hat-at (point-min))))
+
 (ert-deftest hatty--variable-width-font ()
   "Variable width fonts have the right size."
   (hatty-test-preserves-pixel-size

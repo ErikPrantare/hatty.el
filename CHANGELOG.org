@@ -1,6 +1,19 @@
-* NEXT
+* 2.2.0 [2026-10-18 Sun]
+- ~hatty-colors~ can now take faces.  Hat colors specified by faces
+  are determined by the face's foreground color.  The default palette
+  is defined through new ~hatty-color-*~ faces.
+- Previously, if a buffer was displayed in multiple windows, hatty
+  only rendered hats for one of the windows.  Now, hatty renders hats
+  in all windows displaying a buffer.
+- Hat sizes now scale with ~text-scale-adjust~.
+- Bug fixed where the selected window could change if the user made
+  inputs during hat reallocation.
+
+* 2.1.0 [2026-08-15 Sat]
 - Reduced jitter between hat allocations.  Old behavior can be
   regained by customizing ~hatty-reallocation-priority~.
+- Improved method for adding space for hats.  Now it can add space in
+  more situations.
 
 * 2.0.0 [2026-04-20 Mon]
 - New user option ~hatty-scale-factor~.  This option will scale the
