@@ -740,8 +740,26 @@ returns nil."
                  ;; curve inside that, instead of using this equation
                  ;; derived from trial-and-error.
                  (scale (* hatty-scale-factor
-                           ;; Magic number 200.0 was picked to look good.
-                           (/ (face-attribute 'default :height) 200.0)))
+                           (let ((remap (append
+                                         (alist-get 'default face-remapping-alist)
+                                         (list 'default)))
+                                 (height 1.0)
+                                 current-face current-height)
+                             (while (and remap (not (integerp height)))
+                               (setq current-face (pop remap))
+                               (setq current-height
+                                     (cond
+                                      ((consp current-face)
+                                       (plist-get current-face :height))
+                                      ((facep current-face)
+                                       (face-attribute current-face :height nil t))
+                                      (t (ignore))))
+                               (when (numberp current-height)
+                                 (setq height (* height current-height)))
+                               (when (integerp current-height)
+                                 (setq height (floor height))))
+                             ;; Magic number 200.0 was picked to look good.
+                             (/ height 200.0))))
 
                  ;; Convert from emacs color to 6 letter svg hexcode.
                  (svg-hat-color

@@ -5,6 +5,7 @@
 - Previously, if a buffer was displayed in multiple windows, hatty
   only rendered hats for one of the windows.  Now, hatty renders hats
   in all windows displaying a buffer.
+- Hat sizes now scale with ~text-scale-adjust~.
 - Bug fixed where the selected window could change if the user made
   inputs during hat reallocation.
 
